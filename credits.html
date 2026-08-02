@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Credits &amp; plans · uniqueness</title>
+<link rel="icon" href="assets/images/uniqueness-logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/layout.css" />
+<link rel="stylesheet" href="css/components.css" />
+<link rel="stylesheet" href="css/pages.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside id="sidebar" class="sidebar"></aside>
+  <div class="app-main">
+    <header id="topbar" class="topbar"></header>
+
+    <main class="page">
+      <div class="notice hidden" id="welcome" style="margin-bottom:22px">
+        <span style="width:38px;height:38px;border-radius:12px;background:#fff;display:grid;place-items:center;color:var(--teal-text);font-size:16px;flex-shrink:0">✦</span>
+        <span class="grow" style="font-size:13.5px;line-height:1.55" id="welcomeText"></span>
+        <button class="btn--link" id="dismissWelcome" style="color:var(--teal-text)">Dismiss</button>
+      </div>
+
+      <div class="row-wrap spread" style="align-items:flex-end;margin-bottom:22px">
+        <div>
+          <h1>Buy <span class="grad-text">minutes</span>, not a subscription</h1>
+          <p class="lead" style="max-width:520px;margin-top:10px">One minute of credit = one minute of video captioned. Every style and all subtitle files are free — credits only cover captioning and clean exports.</p>
+        </div>
+        <div class="segmented">
+          <button data-billing="packs" class="is-on">Packs</button>
+          <button data-billing="monthly">Monthly</button>
+        </div>
+      </div>
+
+      <div class="row-wrap" style="gap:22px;margin-bottom:24px;font-size:13px;color:var(--mut)">
+        <span class="row" style="gap:8px"><span style="color:var(--purple)">✦</span>Credits never expire</span>
+        <span class="row" style="gap:8px"><span style="color:var(--purple)">✦</span>Launch pricing, locked while you're early</span>
+        <span class="row" style="gap:8px"><span style="color:var(--purple)">✦</span>UPI, cards &amp; netbanking</span>
+      </div>
+
+      <div class="grid grid--plans" id="plans" style="margin-bottom:32px"></div>
+
+      <section class="card hidden" id="history" style="margin-bottom:16px;overflow:hidden">
+        <div class="card__head"><span class="card__title">Billing history</span></div>
+        <div id="historyRows"></div>
+      </section>
+
+      <div class="grid grid--cards">
+        <article class="card card--pad">
+          <h3 style="font-size:13.5px;margin-bottom:9px">How credits burn</h3>
+          <p style="font-size:13px;color:var(--mut);line-height:1.6">A 45-second clip costs 45 seconds. Re-styling, re-timing and re-exporting the same clip is free — you only pay once per minute of source video.</p>
+        </article>
+        <article class="card card--pad">
+          <h3 style="font-size:13.5px;margin-bottom:9px">Watermark</h3>
+          <p style="font-size:13px;color:var(--mut);line-height:1.6">Free exports carry a small corner mark. Any paid credit pack removes it on every export, at up to 4K.</p>
+        </article>
+        <article class="card card--pad">
+          <h3 style="font-size:13.5px;margin-bottom:9px">Refunds</h3>
+          <p style="font-size:13px;color:var(--mut);line-height:1.6">Unused credits are refundable for 7 days. Something rendered wrong? We re-credit the minutes, no questions.</p>
+        </article>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/credits.js"></script>
+</body>
+</html>

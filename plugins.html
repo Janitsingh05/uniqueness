@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Plugins · uniqueness</title>
+<link rel="icon" href="assets/images/uniqueness-logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/layout.css" />
+<link rel="stylesheet" href="css/components.css" />
+<link rel="stylesheet" href="css/pages.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside id="sidebar" class="sidebar"></aside>
+  <div class="app-main">
+    <header id="topbar" class="topbar"></header>
+
+    <main class="page page--narrow">
+      <div class="page__head">
+        <h1>Editor <span class="grad-text">plugins</span></h1>
+        <p class="lead" style="max-width:520px">Native panels are on the roadmap. Today every project exports a burned-in MP4 or a caption file you can drop straight onto a timeline.</p>
+      </div>
+
+      <div class="grid grid--split">
+        <div class="stack" style="gap:10px" id="integrations"></div>
+
+        <section class="card card--tint card--pad" style="display:flex;flex-direction:column">
+          <div class="row" style="gap:8px;margin-bottom:13px">
+            <span style="color:var(--purple)">✦</span>
+            <h3 style="font-size:13.5px">Works today</h3>
+          </div>
+          <p style="font-size:13px;color:var(--body);line-height:1.65;margin-bottom:16px">Open a clip in the studio, then export a burned-in <span class="mono" style="color:var(--purple-deep)">.mp4</span> or a <span class="mono" style="color:var(--purple-deep)">.srt</span> / <span class="mono" style="color:var(--purple-deep)">.vtt</span> — drag either into Premiere, Resolve, Final Cut or CapCut.</p>
+          <div class="stack" style="gap:8px;margin-bottom:18px">
+            <div class="inset-row" style="background:#fff;border:1px solid var(--hair)"><span class="muted">Burned-in video</span><b>MP4</b></div>
+            <div class="inset-row" style="background:#fff;border:1px solid var(--hair)"><span class="muted">Timed captions</span><b>SRT · VTT</b></div>
+            <div class="inset-row" style="background:#fff;border:1px solid var(--hair)"><span class="muted">Plain transcript</span><b>TXT</b></div>
+          </div>
+          <a class="btn btn--primary btn--block" href="editor.html" style="margin-top:auto">Open the studio</a>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/account.js"></script>
+<script>UQ.start(() => UQ.plugins.init());</script>
+</body>
+</html>

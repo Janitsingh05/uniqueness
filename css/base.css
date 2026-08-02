@@ -1,0 +1,59 @@
+/* ============================================================
+   base.css — reset, typography, form defaults.
+   No component styling lives here.
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-wrap: pretty;
+}
+
+h1, h2, h3, h4 { margin: 0; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; }
+h1 { font-size: clamp(26px, 3.6vw, 38px); }
+h2 { font-size: 16px; }
+p  { margin: 0; }
+
+a { color: #6D34E8; text-decoration: none; }
+a:hover { color: var(--brand-teal); }
+
+img { max-width: 100%; display: block; }
+
+button, input, select, textarea { font: inherit; color: inherit; outline: none; }
+button { cursor: pointer; border: none; background: none; padding: 0; }
+input::placeholder, textarea::placeholder { color: var(--faint); }
+
+::selection { background: #E4D9FF; color: var(--ink); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #DCDFEA; border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Utilities used across pages */
+.grad-text {
+  background-image: var(--grad-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.mono { font-family: var(--mono); }
+.serif { font-family: var(--serif); font-style: italic; font-weight: 400; }
+.muted { color: var(--mut); }
+.faint { color: var(--faint); }
+.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; color: var(--faint); text-transform: uppercase; }
+.lead { font-size: 14.5px; color: var(--mut); line-height: 1.6; }
+.row { display: flex; align-items: center; gap: 10px; }
+.row-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.spread { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.grow { flex: 1; min-width: 0; }
+.hidden { display: none !important; }

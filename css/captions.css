@@ -1,0 +1,169 @@
+/* ============================================================
+   captions.css — the caption engine's look.
+   One class per template: .tpl-punch, .tpl-karaoke, …
+   Sizing/colour come from CSS variables set by js/editor.js:
+     --cap-size, --cap-pos, --cap-color, --cap-hl,
+     --cap-stroke, --cap-shadow, --cap-font, --cap-dur
+   ============================================================ */
+
+/* ---------- Video stage ---------- */
+.stage {
+  position: relative; width: 100%; border-radius: 16px; overflow: hidden;
+  background: #000; container-type: size;
+  box-shadow: 0 24px 50px -28px rgba(20, 20, 40, .5);
+}
+.stage--916 { max-width: 320px; aspect-ratio: 9 / 16; }
+.stage--11  { max-width: 470px; aspect-ratio: 1 / 1; }
+.stage--169 { max-width: 720px; aspect-ratio: 16 / 9; }
+.stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
+
+.stage__empty {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+  gap: 12px; text-align: center; padding: 15% 18px 0; background: var(--stage); color: #fff;
+}
+.stage__safe { position: absolute; inset: 6% 8%; border: 1px dashed rgba(255, 255, 255, .24); border-radius: 8px; pointer-events: none; }
+.stage__mark {
+  position: absolute; right: 10px; top: 10px; font-size: 9px; font-weight: 700; letter-spacing: .12em;
+  color: rgba(255, 255, 255, .6); background: rgba(0, 0, 0, .35);
+  border: 1px solid rgba(255, 255, 255, .18); border-radius: 6px; padding: 4px 7px; pointer-events: none;
+}
+
+/* ---------- Caption block ---------- */
+.cap {
+  position: absolute; left: 6%; right: 6%; bottom: var(--cap-pos, 16cqh);
+  display: flex; flex-wrap: wrap; gap: 0 .04em;
+  align-items: center; justify-content: center; text-align: center;
+  font-size: var(--cap-size, 8cqh); font-family: var(--cap-font, var(--font));
+  pointer-events: none;
+}
+.cap .w {
+  display: inline-block; margin: 0 .14em; line-height: 1.1;
+  color: var(--cap-color, #fff);
+  -webkit-text-stroke: var(--cap-stroke, .048em) #000;
+  paint-order: stroke fill;
+  text-shadow: var(--cap-shadow, 0 .06em .18em rgba(0, 0, 0, .6));
+}
+.cap .emoji { font-size: .7em; margin-left: .2em; -webkit-text-stroke: 0; }
+
+/* 1 · Punch — one giant word */
+.tpl-punch .w { font-weight: 800; letter-spacing: -.03em; color: var(--cap-hl); animation: capPop var(--cap-dur, .34s) cubic-bezier(.2, 1.5, .3, 1) both; }
+
+/* 2 · Karaoke — line holds, spoken word lights up */
+.tpl-karaoke .w { font-weight: 700; color: rgba(255, 255, 255, .5); }
+.tpl-karaoke .w.on { color: var(--cap-hl); }
+
+/* 3 · Chip — solid block behind the active word */
+.tpl-chip .w { font-weight: 700; padding: .02em .16em; border-radius: .16em; }
+.tpl-chip .w.on { background: var(--cap-hl); color: #fff; -webkit-text-stroke: 0; }
+
+/* 4 · Neon — glow */
+.tpl-neon .w {
+  font-weight: 700; color: #fff; -webkit-text-stroke: 0;
+  text-shadow: 0 0 .1em var(--cap-hl), 0 0 .5em var(--cap-hl);
+  animation: capPop var(--cap-dur, .34s) cubic-bezier(.2, 1.5, .3, 1) both;
+}
+
+/* 5 · Build — the line assembles word by word */
+.tpl-build .w { font-weight: 700; opacity: 0; }
+.tpl-build .w.past, .tpl-build .w.on { opacity: 1; }
+.tpl-build .w.on { color: var(--cap-hl); animation: capRise var(--cap-dur, .34s) ease-out both; }
+
+/* 6 · Type — typewriter with a caret */
+.tpl-type .typed { font-weight: 600; color: var(--cap-color, #fff); }
+.tpl-type .caret { animation: capCaret 1s steps(1) infinite; }
+
+/* 7 · Bounce — springy pop, short-form default */
+.tpl-bounce .w { font-weight: 800; letter-spacing: -.02em; }
+.tpl-bounce .w.on { color: var(--cap-hl); animation: capBounce var(--cap-dur, .34s) cubic-bezier(.2, 1.5, .3, 1) both; }
+
+/* 8 · Meme — fat outline + hard shadow */
+.tpl-meme .w { font-weight: 800; -webkit-text-stroke: .07em #000; text-shadow: .05em .05em 0 #000; }
+.tpl-meme .w.on { color: var(--cap-hl); }
+
+/* 9 · Sweep — colour travels across the line */
+.tpl-sweep .w {
+  font-weight: 800; letter-spacing: -.02em; color: transparent; -webkit-text-stroke: 0; text-shadow: none;
+  background-image: linear-gradient(90deg, var(--cap-color), var(--cap-hl), #5EEAD4, var(--cap-color));
+  background-size: 200% 100%; -webkit-background-clip: text; background-clip: text;
+  animation: capSweep 3s linear infinite;
+}
+
+/* 10 · Bar — classic bottom subtitle plate */
+.cap.tpl-bar {
+  left: 10%; right: 10%; padding: .5em .7em; border-radius: .4em;
+  background: rgba(0, 0, 0, .62); border: 1px solid rgba(255, 255, 255, .16);
+}
+.tpl-bar .w { font-weight: 500; -webkit-text-stroke: 0; text-shadow: none; }
+.tpl-bar .w.on { color: var(--cap-hl); }
+
+/* 11 · Editorial — calm serif */
+.tpl-editorial .w { font-family: var(--serif); font-style: italic; font-weight: 400; color: rgba(255, 255, 255, .85); -webkit-text-stroke: 0; }
+.tpl-editorial .w.on { color: var(--cap-hl); }
+
+/* ---------- Keyframes ---------- */
+@keyframes capPop    { 0% { transform: scale(.7) translateY(.08em); opacity: 0; } 55% { transform: scale(1.07); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes capBounce { 0% { transform: translateY(.18em) scale(.9); opacity: 0; } 45% { transform: translateY(-.06em) scale(1.05); } 75% { transform: translateY(.02em) scale(.99); } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+@keyframes capRise   { 0% { transform: translateY(.3em); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+@keyframes capCaret  { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes capSweep  { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+
+/* ---------- Preview tiles (templates library + dashboard) ---------- */
+.preview {
+  height: 104px; background: var(--stage); display: grid; place-items: center;
+  padding: 12px; text-align: center; color: #fff; overflow: hidden;
+}
+.preview--tall { height: 158px; padding: 14px; }
+.preview--bottom { display: flex; align-items: flex-end; justify-content: center; padding: 18px; }
+
+.pv-punch { font-size: 30px; font-weight: 800; letter-spacing: -.04em; color: #A78BFA; animation: pvPunch 2.6s infinite; }
+.preview--tall .pv-punch { font-size: 42px; }
+.pv-karaoke { font-size: 15px; font-weight: 700; color: rgba(255, 255, 255, .45); }
+.preview--tall .pv-karaoke { font-size: 21px; line-height: 1.35; }
+.pv-karaoke span { animation: pvHl 2.4s infinite; }
+.pv-karaoke span:nth-child(2) { animation-delay: .8s; }
+.pv-karaoke span:nth-child(3) { animation-delay: 1.6s; }
+.pv-chip { font-size: 15px; font-weight: 700; display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
+.preview--tall .pv-chip { font-size: 19px; gap: 6px; }
+.pv-chip span { padding: 2px 6px; border-radius: 6px; animation: pvChip 2.4s infinite; }
+.preview--tall .pv-chip span { padding: 3px 8px; border-radius: 8px; }
+.pv-chip span:nth-child(2) { animation-delay: .8s; }
+.pv-chip span:nth-child(3) { animation-delay: 1.6s; }
+.pv-neon { font-size: 22px; font-weight: 700; animation: pvGlow 1.9s infinite; }
+.preview--tall .pv-neon { font-size: 29px; }
+.pv-build { font-size: 15px; font-weight: 700; line-height: 1.35; }
+.preview--tall .pv-build { font-size: 20px; }
+.pv-build span { display: inline-block; animation: pvBuild 3s infinite; }
+.pv-build span:nth-child(2) { animation-delay: .35s; }
+.pv-build span:nth-child(3) { animation-delay: .7s; color: #A78BFA; }
+.pv-build span:nth-child(4) { animation-delay: 1.05s; color: #A78BFA; }
+.pv-build span:nth-child(5) { animation-delay: 1.4s; color: #A78BFA; }
+.pv-type { font-family: var(--mono); font-size: 12px; display: flex; align-items: center; }
+.preview--tall .pv-type { font-size: 14px; }
+.pv-type i { font-style: normal; display: inline-block; overflow: hidden; white-space: nowrap; animation: pvType 3.4s steps(22) infinite; }
+.pv-type b { color: #A78BFA; animation: capCaret 1s steps(1) infinite; }
+.pv-bounce { font-size: 18px; font-weight: 800; letter-spacing: -.02em; }
+.preview--tall .pv-bounce { font-size: 22px; }
+.pv-bounce span { display: inline-block; animation: pvBuild 2.4s infinite; }
+.pv-bounce span:nth-child(2) { animation-delay: .3s; color: #A78BFA; }
+.pv-bounce span:nth-child(3) { animation-delay: .6s; }
+.pv-bounce span:nth-child(4) { animation-delay: .9s; }
+.pv-meme { font-size: 21px; font-weight: 800; -webkit-text-stroke: 4px #000; paint-order: stroke fill; text-shadow: 3px 3px 0 #000; }
+.preview--tall .pv-meme { font-size: 25px; -webkit-text-stroke: 5px #000; text-shadow: 4px 4px 0 #000; }
+.pv-sweep {
+  font-size: 19px; font-weight: 800; letter-spacing: -.02em; color: transparent;
+  background-image: linear-gradient(90deg, #fff, #A78BFA, #5EEAD4, #fff); background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; animation: capSweep 3s linear infinite;
+}
+.preview--tall .pv-sweep { font-size: 24px; }
+.pv-bar { font-size: 12px; font-weight: 500; background: rgba(0, 0, 0, .6); border: 1px solid rgba(255, 255, 255, .16); border-radius: 7px; padding: 6px 10px; }
+.preview--tall .pv-bar { font-size: 14px; padding: 7px 12px; }
+.pv-editorial { font-family: var(--serif); font-style: italic; font-size: 21px; line-height: 1.3; }
+.preview--tall .pv-editorial { font-size: 26px; }
+.pv-editorial em { color: #5EEAD4; font-style: italic; }
+
+@keyframes pvPunch { 0% { opacity: 0; transform: scale(.6); } 12% { opacity: 1; transform: scale(1.08); } 20%, 80% { transform: scale(1); opacity: 1; } 92%, 100% { opacity: 0; transform: scale(.94); } }
+@keyframes pvHl    { 0%, 26% { color: rgba(255, 255, 255, .45); } 32%, 62% { color: #A78BFA; } 68%, 100% { color: rgba(255, 255, 255, .45); } }
+@keyframes pvChip  { 0%, 26% { background: transparent; } 32%, 62% { background: #8B5CFF; } 68%, 100% { background: transparent; } }
+@keyframes pvGlow  { 0%, 100% { text-shadow: 0 0 .1em #8B5CFF, 0 0 .45em rgba(139, 92, 255, .8); } 50% { text-shadow: 0 0 .16em #8B5CFF, 0 0 .8em rgba(20, 184, 196, .9); } }
+@keyframes pvBuild { 0%, 20% { opacity: 0; transform: translateY(.3em); } 30%, 88% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(.3em); } }
+@keyframes pvType  { 0%, 8% { width: 0; } 55%, 100% { width: 100%; } }

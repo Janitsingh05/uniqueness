@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Caption editor · uniqueness</title>
+<link rel="icon" href="assets/images/uniqueness-logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Bangers&family=Barlow+Condensed:wght@700;800&family=Bebas+Neue&family=DM+Sans:wght@700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&family=Montserrat:wght@700;800&family=Oswald:wght@500;700&family=Outfit:wght@700;800&family=Playfair+Display:ital,wght@0,700;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/layout.css" />
+<link rel="stylesheet" href="css/components.css" />
+<link rel="stylesheet" href="css/captions.css" />
+<link rel="stylesheet" href="css/pages.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside id="sidebar" class="sidebar"></aside>
+  <div class="app-main">
+    <header id="topbar" class="topbar"></header>
+
+    <main class="editor-grid">
+      <!-- ============ LEFT: preview + timeline ============ -->
+      <section class="stack" style="gap:14px;min-width:0">
+        <div class="row-wrap spread">
+          <div class="row" style="min-width:0">
+            <span id="clipName" style="font-size:15px;font-weight:700;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:250px"></span>
+            <span id="tplBadge" class="badge badge--purple"></span>
+          </div>
+          <div class="row" style="gap:8px">
+            <button class="btn btn--ghost btn--sm" id="saveProject">Save project</button>
+            <div class="segmented">
+              <button data-ratio="9:16" class="is-on">9:16</button>
+              <button data-ratio="1:1">1:1</button>
+              <button data-ratio="16:9">16:9</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="stage-wrap">
+          <div class="stage stage--916" id="stage">
+            <video id="video" playsinline></video>
+
+            <div class="stage__empty" id="stageEmpty">
+              <div style="font-size:11px;font-weight:700;letter-spacing:.14em;color:rgba(255,255,255,.35)">NO CLIP LOADED</div>
+              <div style="font-size:15px;font-weight:700;max-width:215px;line-height:1.35">Load a video to preview captions on it</div>
+              <button class="btn btn--primary btn--sm" id="pickFile">Choose a video</button>
+            </div>
+
+            <div class="stage__safe" id="safeBox"></div>
+            <div class="cap tpl-punch" id="cap"></div>
+            <div class="stage__mark" id="watermark">UNIQUENESS.ONLINE</div>
+          </div>
+        </div>
+        <input type="file" id="fileInput" accept="video/*,audio/*" class="hidden" />
+
+        <div class="card card--pad" style="padding:16px">
+          <div class="transport">
+            <button class="transport__play" id="playBtn">▶</button>
+            <span class="transport__time" id="timeLabel">0:00 / 0:00</span>
+            <div class="scrub" id="scrub">
+              <div class="scrub__rail">
+                <div class="scrub__fill" id="scrubFill"></div>
+                <div class="scrub__head" id="scrubHead"></div>
+              </div>
+            </div>
+            <button class="btn btn--quiet btn--sm" id="safeBtn">Safe area</button>
+          </div>
+
+          <div class="voice-strip hidden" id="voiceStrip">
+            <span class="eyebrow" style="flex-shrink:0">Voice</span>
+            <div class="voice-strip__rail" id="voiceRail"></div>
+          </div>
+
+          <div class="word-chips" id="wordChips"></div>
+        </div>
+
+        <div class="row-wrap card" style="padding:14px 16px;border-color:#E7E3F8;background:#F9F6FF">
+          <span class="badge" data-sync-chip>Even spacing</span>
+          <span class="grow" style="font-size:12.5px;color:var(--mut);line-height:1.5" data-sync-note></span>
+        </div>
+      </section>
+
+      <!-- ============ RIGHT: control rail ============ -->
+      <section class="stack" style="gap:12px;min-width:0">
+        <div class="segmented segmented--fill">
+          <button data-tab="style" class="is-on">Style</button>
+          <button data-tab="text">Text</button>
+          <button data-tab="export">Export</button>
+        </div>
+
+        <!-- Style -->
+        <div class="panel" data-panel="style">
+          <div class="panel__group">
+            <span class="eyebrow">Template</span>
+            <select class="select" id="tplSelect"></select>
+          </div>
+
+          <div class="panel__group">
+            <span class="eyebrow">Font</span>
+            <div class="row-wrap font-grid" id="fontPicker" style="gap:6px;margin-bottom:16px"></div>
+            <div class="range-label"><span>Size</span><b id="sizeValue"></b></div>
+            <input class="range" type="range" id="sizeRange" min="3" max="16" step="0.5" />
+            <div class="range-label" style="margin-top:16px"><span>Position from bottom</span><b id="posValue"></b></div>
+            <input class="range" type="range" id="posRange" min="4" max="80" step="1" />
+          </div>
+
+          <div class="panel__group">
+            <span class="eyebrow">Colour</span>
+            <div class="row-wrap" style="gap:18px;align-items:flex-start">
+              <div>
+                <div style="font-size:12px;color:var(--mut);margin-bottom:8px">Text</div>
+                <div class="row" style="gap:7px">
+                  <button class="swatch" data-color="#FFFFFF" style="background:#FFFFFF"></button>
+                  <button class="swatch" data-color="#14141C" style="background:#14141C"></button>
+                  <button class="swatch" data-color="#A78BFA" style="background:#A78BFA"></button>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:12px;color:var(--mut);margin-bottom:8px">Highlight</div>
+                <div class="row" style="gap:7px">
+                  <button class="swatch" data-hl="#A78BFA" style="background:#A78BFA"></button>
+                  <button class="swatch" data-hl="#5EEAD4" style="background:#5EEAD4"></button>
+                  <button class="swatch" data-hl="#FF7A45" style="background:#FF7A45"></button>
+                  <button class="swatch" data-hl="#FFFFFF" style="background:#FFFFFF"></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel__group">
+            <span class="eyebrow">Outline &amp; shadow</span>
+            <div class="range-label"><span>Stroke</span><b id="strokeValue"></b></div>
+            <input class="range" type="range" id="strokeRange" min="0" max="10" step="1" />
+            <button class="toggle-row" id="shadowToggle" style="margin-top:15px"><span>Drop shadow</span><span id="shadowState">on</span></button>
+          </div>
+
+          <div class="panel__group">
+            <span class="eyebrow">Motion &amp; layout</span>
+            <div class="range-label"><span>Animation speed</span><b id="speedValue"></b></div>
+            <input class="range" type="range" id="speedRange" min="0.5" max="2" step="0.1" />
+            <div class="range-label" style="margin-top:16px"><span>Words per line</span><b id="wplValue"></b></div>
+            <input class="range" type="range" id="wplRange" min="1" max="7" step="1" />
+            <button class="toggle-row" id="upperToggle" style="margin-top:15px"><span>Uppercase</span><span id="upperState">on</span></button>
+          </div>
+
+          <div class="panel__group">
+            <span class="eyebrow">Sticker</span>
+            <div class="row-wrap emoji-grid" id="emojiPicker" style="gap:6px"></div>
+          </div>
+        </div>
+
+        <!-- Text -->
+        <div class="panel hidden" data-panel="text">
+          <div class="card card--tint" style="padding:16px">
+            <div class="row" style="gap:9px;margin-bottom:12px">
+              <span style="color:var(--purple);font-size:14px">✦</span>
+              <span style="font-size:13.5px;font-weight:700">Auto transcription</span>
+              <span class="badge" data-sync-chip>Even spacing</span>
+            </div>
+
+            <div class="row" style="gap:12px;padding:11px 13px;border-radius:12px;background:#fff;border:1px solid var(--purple-line);margin-bottom:11px">
+              <div class="grow">
+                <div style="font-size:12.5px;font-weight:700;margin-bottom:3px">Auto vocal sync</div>
+                <div style="font-size:11.5px;color:var(--mut);line-height:1.4">Break lines where the speaker pauses and start each one on the voice.</div>
+              </div>
+              <button class="switch is-on" id="vocalToggle"><span></span></button>
+            </div>
+
+            <div class="range-label"><span>Voice sensitivity</span><b id="sensValue">Balanced</b></div>
+            <input class="range" type="range" id="sensRange" min="1" max="10" step="1" style="margin-bottom:13px" />
+
+            <div class="row-wrap" style="gap:8px;margin-bottom:9px">
+              <button class="btn btn--ghost" id="listenBtn" style="flex:1;min-width:148px">Auto-transcribe clip</button>
+              <button class="btn btn--primary" id="analyseBtn" style="flex:1;min-width:148px">Analyse audio &amp; sync</button>
+            </div>
+            <button class="btn btn--quiet btn--block" id="dictateBtn">Dictate with mic instead</button>
+
+            <div style="font-size:12px;color:var(--mut);margin-top:11px;line-height:1.55" data-sync-note></div>
+            <div class="alert alert--info hidden" id="liveText" style="margin-top:11px"></div>
+          </div>
+
+          <div class="panel__group">
+            <span class="eyebrow">Edit script</span>
+            <p style="font-size:12px;color:var(--mut);line-height:1.5;margin-bottom:10px">After transcription, edit the text here — then Apply to update captions (and re-sync timing if a clip is loaded).</p>
+            <textarea class="textarea" id="transcript" rows="9" placeholder="Your script appears here after Auto-transcribe…"></textarea>
+            <div class="row-wrap" style="gap:8px;margin-top:10px">
+              <button class="btn btn--primary" id="applyScriptBtn" style="flex:1">Apply to captions</button>
+              <button class="btn btn--quiet" id="resetScriptBtn" title="Undo edits back to last applied">Reset</button>
+            </div>
+            <div style="font-size:11.5px;color:var(--faint);margin-top:9px;font-weight:600" id="wordStats"></div>
+            <div class="alert alert--info hidden" id="scriptDirty" style="margin-top:10px">You have unsaved edits — hit Apply to update captions.</div>
+          </div>
+
+          <button class="toggle-row is-on" id="fillerToggle"><span>Cut filler words (um, uh, like)</span><span id="fillerState">on</span></button>
+
+          <div class="card" style="padding:13px;border-color:#E7E3F8;background:#F9F6FF;box-shadow:none">
+            <div style="font-size:12.5px;color:var(--mut);line-height:1.55">Removed this pass: <b id="cutCount" style="color:var(--purple-deep)">0</b> words. Timing redistributes automatically, so nothing drifts.</div>
+          </div>
+
+          <div class="panel__group">
+            <span class="eyebrow">Lines</span>
+            <div class="stack" style="gap:7px;max-height:220px;overflow:auto" id="lineList"></div>
+          </div>
+        </div>
+
+        <!-- Export -->
+        <div class="panel hidden" data-panel="export">
+          <div class="panel__group">
+            <span class="eyebrow">Burned-in video</span>
+            <div class="render-box">
+              <div class="spread" style="margin-bottom:10px">
+                <span style="font-size:13.5px;font-weight:700" id="exportRatio"></span>
+                <span class="badge badge--purple" id="exportQuality"></span>
+              </div>
+              <div style="font-size:12.5px;color:var(--mut);margin-bottom:13px;line-height:1.5" id="exportNote"></div>
+              <div class="render-box__bar"><div class="render-box__fill" id="renderFill" style="width:0%"></div></div>
+              <button class="btn btn--primary btn--block" id="renderBtn">Render burned-in MP4</button>
+              <div style="font-size:11px;font-weight:600;color:var(--faint);margin-top:10px" id="renderCost"></div>
+            </div>
+          </div>
+
+          <div class="panel__group">
+            <span class="eyebrow">Caption files</span>
+            <div class="stack" style="gap:8px">
+              <button class="dl-row" id="dlSrt"><span>Download .srt</span><span style="color:#6D34E8">↓</span></button>
+              <button class="dl-row" id="dlVtt"><span>Download .vtt</span><span style="color:#6D34E8">↓</span></button>
+              <button class="dl-row" id="dlTxt"><span>Download transcript .txt</span><span style="color:#6D34E8">↓</span></button>
+            </div>
+            <div style="font-size:11.5px;color:var(--faint);margin-top:11px;font-weight:600">Subtitle files are free on every plan.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/captions.js"></script>
+<script src="js/audio-sync.js"></script>
+<script src="js/speech.js"></script>
+<script src="js/exporter.js"></script>
+<script src="js/editor.js"></script>
+</body>
+</html>

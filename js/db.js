@@ -1,0 +1,362 @@
+/* ============================================================
+   db.js — the data layer.
+
+   Two modes:
+     local    — localStorage (default, zero setup)
+     firebase — Google Firebase Auth + Firestore (free Spark)
+
+   Fill js/firebase-config.js to switch. Method names and return
+   shapes stay the same so the rest of the app does not change.
+
+   Always call UQ.start(fn) on each page so auth is ready first.
+   ============================================================ */
+
+window.UQ = window.UQ || {};
+
+UQ.db = {
+  KEY: 'uq_studio_db_v1',
+  mode: 'local',          // 'local' | 'firebase'
+  _user: null,            // firebase: hydrated profile
+  _projects: [],
+  _events: [],
+  _orders: [],
+  _referrals: [],
+  _ready: null,
+  _auth: null,
+  _fs: null,
+
+  /* ---------- boot ---------- */
+  ready() {
+    if (this._ready) return this._ready;
+    this._ready = this._boot();
+    return this._ready;
+  },
+
+  async _boot() {
+    if (!UQ.firebaseEnabled() || typeof firebase === 'undefined') {
+      this.mode = 'local';
+      return 'local';
+    }
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(UQ.firebaseConfig);
+      this._auth = firebase.auth();
+      this._fs = firebase.firestore();
+      this.mode = 'firebase';
+      await new Promise(resolve => {
+        const unsub = this._auth.onAuthStateChanged(async user => {
+          unsub();
+          if (user) await this._hydrate(user.uid);
+          else this._clearCache();
+          resolve();
+        });
+      });
+      return 'firebase';
+    } catch (err) {
+      console.warn('Firebase failed — falling back to localStorage.', err);
+      this.mode = 'local';
+      return 'local';
+    }
+  },
+
+  _clearCache() {
+    this._user = null;
+    this._projects = [];
+    this._events = [];
+    this._orders = [];
+    this._referrals = [];
+  },
+
+  async _hydrate(uid) {
+    const snap = await this._fs.collection('users').doc(uid).get();
+    if (!snap.exists) {
+      this._clearCache();
+      return;
+    }
+    this._user = Object.assign({ id: uid }, snap.data());
+    const [proj, ev, ord] = await Promise.all([
+      this._fs.collection('users').doc(uid).collection('projects').orderBy('at', 'desc').limit(30).get(),
+      this._fs.collection('users').doc(uid).collection('events').orderBy('at', 'desc').limit(12).get(),
+      this._fs.collection('orders').where('user', '==', uid).limit(40).get()
+    ]);
+    this._projects = proj.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    this._events = ev.docs.map(d => Object.assign({ id: d.id }, d.data()));
+    this._orders = ord.docs.map(d => Object.assign({ id: d.id }, d.data()))
+      .sort((a, b) => (b.at || 0) - (a.at || 0));
+    if (this._user.code) {
+      try {
+        const refs = await this._fs.collection('referralHits').doc(this._user.code).collection('members').limit(50).get();
+        this._referrals = refs.docs.map(d => Object.assign({ id: d.id }, d.data()));
+      } catch (e) {
+        this._referrals = [];
+      }
+    }
+  },
+
+  /* Passwords are salted + SHA-256 hashed before they are stored.
+     Firebase Auth hashes server-side — this is only for local mode. */
+  async hash(password, salt) {
+    const text = salt + '::' + password;
+    try {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) {
+      let h = 0;
+      for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) | 0;
+      return 'f' + (h >>> 0).toString(16);
+    }
+  },
+
+  uid(prefix) { return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); },
+
+  /* ---------- local helpers ---------- */
+  read() {
+    try {
+      const raw = localStorage.getItem(this.KEY);
+      const d = raw ? JSON.parse(raw) : null;
+      return d && d.users ? d : this.blank();
+    } catch (e) { return this.blank(); }
+  },
+  blank() { return { users: {}, projects: {}, events: {}, orders: [], session: null }; },
+  write(d) { try { localStorage.setItem(this.KEY, JSON.stringify(d)); } catch (e) {} return d; },
+
+  findByEmail(email) {
+    const d = this.read(), mail = (email || '').trim().toLowerCase();
+    return Object.values(d.users).find(u => u.email === mail) || null;
+  },
+
+  _makeCode(name) {
+    return ((name || 'UQ').trim().split(/\s+/)[0] || 'UQ').toUpperCase().slice(0, 6) + (Math.floor(Math.random() * 90) + 10);
+  },
+
+  /* ---------- accounts ---------- */
+  async signUp({ name, email, password, referral }) {
+    if (this.mode === 'firebase') return this._fbSignUp({ name, email, password, referral });
+    const d = this.read(), mail = (email || '').trim().toLowerCase();
+    if (this.findByEmail(mail)) throw new Error('An account with this email already exists — sign in instead.');
+    const salt = Math.random().toString(36).slice(2, 12);
+    const user = {
+      id: this.uid('usr'),
+      name: (name || '').trim(),
+      email: mail,
+      salt,
+      pw: await this.hash(password, salt),
+      minutes: UQ.config.freeMinutes,
+      plan: 'Free',
+      code: this._makeCode(name),
+      referredBy: (referral || '').trim().toUpperCase() || null,
+      created: Date.now()
+    };
+    d.users[user.id] = user;
+    d.session = user.id;
+    d.events[user.id] = [{ icon: '✦', tone: 'teal', text: 'Account created — ' + user.minutes + ' free minutes added', at: Date.now() }];
+    this.write(d);
+    return user;
+  },
+
+  async _fbSignUp({ name, email, password, referral }) {
+    const mail = (email || '').trim().toLowerCase();
+    let cred;
+    try {
+      cred = await this._auth.createUserWithEmailAndPassword(mail, password);
+    } catch (err) {
+      if (err.code === 'auth/email-already-in-use') throw new Error('An account with this email already exists — sign in instead.');
+      if (err.code === 'auth/weak-password') throw new Error('Password needs at least 6 characters.');
+      throw new Error(err.message || 'Could not create account.');
+    }
+    const uid = cred.user.uid;
+    const code = this._makeCode(name);
+    const referredBy = (referral || '').trim().toUpperCase() || null;
+    const profile = {
+      name: (name || '').trim(),
+      email: mail,
+      minutes: referredBy ? (UQ.config.referral.freeMinutesForFriend || UQ.config.freeMinutes) : UQ.config.freeMinutes,
+      plan: 'Free',
+      code,
+      referredBy,
+      created: Date.now()
+    };
+    await this._fs.collection('users').doc(uid).set(profile);
+    await this._fs.collection('codes').doc(code).set({ uid, at: Date.now() });
+    await this._fs.collection('users').doc(uid).collection('events').add({
+      icon: '✦', tone: 'teal', text: 'Account created — ' + profile.minutes + ' free minutes added', at: Date.now()
+    });
+    if (referredBy) {
+      try {
+        await this._fs.collection('referralHits').doc(referredBy).collection('members').doc(uid).set({
+          name: profile.name,
+          plan: profile.plan,
+          created: profile.created
+        });
+      } catch (e) {}
+    }
+    await this._hydrate(uid);
+    return this._user;
+  },
+
+  async signIn(email, password) {
+    if (this.mode === 'firebase') return this._fbSignIn(email, password);
+    const user = this.findByEmail(email);
+    if (!user) throw new Error('No account with that email. Create one first.');
+    if (await this.hash(password, user.salt) !== user.pw) throw new Error('Wrong password — try again.');
+    const d = this.read();
+    d.session = user.id;
+    this.write(d);
+    return user;
+  },
+
+  async _fbSignIn(email, password) {
+    try {
+      const cred = await this._auth.signInWithEmailAndPassword((email || '').trim().toLowerCase(), password);
+      await this._hydrate(cred.user.uid);
+      return this._user;
+    } catch (err) {
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential')
+        throw new Error('No account with that email. Create one first.');
+      if (err.code === 'auth/wrong-password') throw new Error('Wrong password — try again.');
+      throw new Error(err.message || 'Could not sign in.');
+    }
+  },
+
+  signOut() {
+    if (this.mode === 'firebase' && this._auth) {
+      this._clearCache();
+      this._auth.signOut();
+      return;
+    }
+    const d = this.read();
+    d.session = null;
+    this.write(d);
+  },
+
+  currentUser() {
+    if (this.mode === 'firebase') return this._user;
+    const d = this.read();
+    return d.session ? d.users[d.session] || null : null;
+  },
+
+  updateUser(id, patch) {
+    if (this.mode === 'firebase') {
+      if (!this._user || this._user.id !== id) return null;
+      this._user = Object.assign({}, this._user, patch);
+      const safe = Object.assign({}, patch);
+      delete safe.id;
+      delete safe.pw;
+      delete safe.salt;
+      this._fs.collection('users').doc(id).update(safe).catch(console.warn);
+      return this._user;
+    }
+    const d = this.read();
+    if (!d.users[id]) return null;
+    d.users[id] = Object.assign({}, d.users[id], patch);
+    this.write(d);
+    return d.users[id];
+  },
+
+  /* ---------- credits ---------- */
+  addMinutes(id, minutes) {
+    const u = this.mode === 'firebase' ? this._user : this.read().users[id];
+    if (!u) return null;
+    return this.updateUser(id, { minutes: Math.round((u.minutes + minutes) * 10) / 10 });
+  },
+  spendMinutes(id, minutes) {
+    const u = this.mode === 'firebase' ? this._user : this.read().users[id];
+    if (!u) return null;
+    return this.updateUser(id, { minutes: Math.max(0, Math.round((u.minutes - minutes) * 10) / 10) });
+  },
+
+  /* ---------- orders ---------- */
+  addOrder(userId, order) {
+    if (this.mode === 'firebase') {
+      const row = Object.assign({ user: userId, at: Date.now() }, order);
+      const id = this.uid('ord');
+      this._orders.unshift(Object.assign({ id }, row));
+      this._fs.collection('orders').doc(id).set(row).catch(console.warn);
+      return this._orders;
+    }
+    const d = this.read();
+    d.orders.unshift(Object.assign({ id: this.uid('ord'), user: userId, at: Date.now() }, order));
+    this.write(d);
+    return d.orders;
+  },
+  orders(userId) {
+    if (this.mode === 'firebase') return this._orders.filter(o => o.user === userId);
+    return this.read().orders.filter(o => o.user === userId);
+  },
+
+  /* ---------- projects ---------- */
+  saveProject(userId, project) {
+    if (this.mode === 'firebase') {
+      const list = this._projects.slice();
+      const i = project.id ? list.findIndex(p => p.id === project.id) : -1;
+      const id = i >= 0 ? list[i].id : this.uid('prj');
+      const row = Object.assign({}, i >= 0 ? list[i] : {}, project, { at: Date.now() });
+      delete row.id;
+      if (i >= 0) list[i] = Object.assign({ id }, row);
+      else list.unshift(Object.assign({ id }, row));
+      this._projects = list.slice(0, 30);
+      this._fs.collection('users').doc(userId).collection('projects').doc(id).set(row).catch(console.warn);
+      return this._projects;
+    }
+    const d = this.read();
+    const list = d.projects[userId] || [];
+    const i = project.id ? list.findIndex(p => p.id === project.id) : -1;
+    if (i >= 0) list[i] = Object.assign({}, list[i], project, { at: Date.now() });
+    else list.unshift(Object.assign({ id: this.uid('prj') }, project, { at: Date.now() }));
+    d.projects[userId] = list.slice(0, 30);
+    this.write(d);
+    return d.projects[userId];
+  },
+  projects(userId) {
+    if (this.mode === 'firebase') return this._projects;
+    return this.read().projects[userId] || [];
+  },
+  project(userId, id) { return this.projects(userId).find(p => p.id === id) || null; },
+  deleteProject(userId, id) {
+    if (this.mode === 'firebase') {
+      this._projects = this._projects.filter(p => p.id !== id);
+      this._fs.collection('users').doc(userId).collection('projects').doc(id).delete().catch(console.warn);
+      return this._projects;
+    }
+    const d = this.read();
+    d.projects[userId] = (d.projects[userId] || []).filter(p => p.id !== id);
+    this.write(d);
+    return d.projects[userId];
+  },
+
+  /* ---------- activity feed ---------- */
+  addEvent(userId, event) {
+    if (this.mode === 'firebase') {
+      const row = Object.assign({ at: Date.now() }, event);
+      const id = this.uid('evt');
+      this._events = [Object.assign({ id }, row)].concat(this._events).slice(0, 12);
+      this._fs.collection('users').doc(userId).collection('events').doc(id).set(row).catch(console.warn);
+      return this._events;
+    }
+    const d = this.read();
+    d.events[userId] = [Object.assign({ at: Date.now() }, event)].concat(d.events[userId] || []).slice(0, 12);
+    this.write(d);
+    return d.events[userId];
+  },
+  events(userId) {
+    if (this.mode === 'firebase') return this._events;
+    return this.read().events[userId] || [];
+  },
+
+  /* ---------- referrals ---------- */
+  referrals(code) {
+    if (this.mode === 'firebase') return this._referrals;
+    if (!code) return [];
+    return Object.values(this.read().users).filter(u => u.referredBy === code);
+  }
+};
+
+/* Wait for Firebase/local boot, then run the page controller. */
+UQ.start = function (fn) {
+  document.addEventListener('DOMContentLoaded', () => {
+    UQ.db.ready().then(() => fn()).catch(err => {
+      console.error(err);
+      document.body.insertAdjacentHTML('afterbegin',
+        '<div style="padding:14px 18px;background:#FEF2F2;color:#991B1B;font:13px/1.4 system-ui">Studio failed to start. Check the browser console.</div>');
+    });
+  });
+};

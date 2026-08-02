@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sign in · uniqueness</title>
+<link rel="icon" href="assets/images/uniqueness-logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/components.css" />
+<link rel="stylesheet" href="css/pages.css" />
+</head>
+<body>
+
+<main class="auth">
+  <aside class="auth__aside">
+    <a href="index.html"><img src="assets/images/uniqueness-logo.png" alt="uniqueness — home" /></a>
+    <div style="padding:44px 0">
+      <div class="auth__pitch">Three minutes of<br />captions, on the <span class="grad-text">house</span></div>
+      <p class="lead" style="max-width:340px">Create an account, get 3 free minutes, and pick a credit pack only when you need more.</p>
+    </div>
+    <div class="row-wrap" style="gap:12px;font-size:12px;font-weight:600;color:var(--faint)">
+      <span>11 styles</span><span>·</span><span>Word-level timing</span><span>·</span><span>SRT + MP4</span>
+    </div>
+  </aside>
+
+  <section class="auth__form">
+    <div>
+      <div class="segmented segmented--fill" style="margin-bottom:22px">
+        <button id="tabSignin" class="is-on" type="button">Sign in</button>
+        <button id="tabSignup" type="button">Create account</button>
+      </div>
+
+      <h2 id="authTitle" style="font-size:23px;margin-bottom:20px">Welcome back</h2>
+
+      <form id="authForm" novalidate>
+        <div data-signup-only class="hidden">
+          <label class="field" for="fName">Your name</label>
+          <input class="input" id="fName" style="margin-bottom:13px" placeholder="Aarav Singh" autocomplete="name" />
+        </div>
+
+        <label class="field" for="fEmail">Email</label>
+        <input class="input" id="fEmail" type="email" style="margin-bottom:13px" placeholder="you@studio.com" autocomplete="email" />
+
+        <label class="field" for="fPw">Password</label>
+        <input class="input" id="fPw" type="password" style="margin-bottom:13px" placeholder="At least 6 characters" autocomplete="current-password" />
+
+        <div data-signup-only class="hidden">
+          <label class="field" for="fPw2">Confirm password</label>
+          <input class="input" id="fPw2" type="password" style="margin-bottom:13px" placeholder="Type it again" autocomplete="new-password" />
+          <label class="field" for="fRef">Referral code <span class="faint">· optional</span></label>
+          <input class="input" id="fRef" style="margin-bottom:13px" placeholder="AARAV26" />
+        </div>
+
+        <div id="authError" class="alert alert--error hidden" style="margin-bottom:14px"></div>
+
+        <button id="authSubmit" class="btn btn--primary btn--block" type="submit" style="padding:14px;margin-bottom:12px">Sign in</button>
+      </form>
+
+      <div class="row" style="gap:7px;font-size:12.5px;color:var(--mut);margin-bottom:18px">
+        <span id="authSwitchText">New here?</span>
+        <button id="authSwitch" class="btn--link" type="button">Create one free</button>
+      </div>
+
+      <p style="font-size:12px;color:var(--faint);line-height:1.6">Clips stay on your device. With Firebase connected, your account and credits sync across browsers.</p>
+      <a class="btn--link" href="index.html" style="display:inline-block;margin-top:18px">← Back to site</a>
+    </div>
+  </section>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>

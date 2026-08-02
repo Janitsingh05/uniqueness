@@ -1,0 +1,500 @@
+/* ============================================================
+   editor.js — the caption editor page controller.
+
+   Wires together: file loading, playback, the timing engine
+   (captions.js), auto vocal sync (audio-sync.js), speech-to-text
+   (speech.js) and exports (exporter.js).
+   ============================================================ */
+
+window.UQ = window.UQ || {};
+
+UQ.editor = {
+  DEMO: 'Most people scroll past the first two seconds. So I put the hook in the first three words and let the captions carry the rest. Watch how the words land on the beat.',
+
+  state: {
+    file: null, url: null, filename: '', duration: 0, time: 0, playing: false,
+    transcript: '', draft: '', cutFiller: true, safe: true, tab: 'style',
+    segments: null, speechTotal: 0, vocalSync: true, sensitivity: 5,
+    note: '', live: '', analysing: false, rendering: false, renderPct: 0, renderDone: false,
+    projectId: null, style: null, lines: []
+  },
+
+  init() {
+    const user = UQ.shell.mount('editor', 'Caption editor');
+    if (!user) return;
+    this.user = user;
+    this.state.style = Object.assign({}, UQ.config.defaultStyle);
+    this.state.transcript = this.DEMO;
+    this.state.draft = this.DEMO;
+    this.state.vocalSync = UQ.config.vocalSync.enabled;
+
+    this.stage = UQ.ui.el('#stage');
+    this.cap = UQ.ui.el('#cap');
+    this.video = UQ.ui.el('#video');
+    this.input = UQ.ui.el('#fileInput');
+
+    this.bindStatic();
+    this.loadFromQuery();
+    this.recompute();
+    this.renderAll();
+
+    const loop = () => {
+      if (this.video && !this.video.paused && !this.video.ended) {
+        this.state.time = this.video.currentTime;
+        this.paintFrame();
+      }
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  },
+
+  /* ---------- setup ---------- */
+  loadFromQuery() {
+    const params = new URLSearchParams(location.search);
+    if (params.get('tpl')) this.state.style.tpl = params.get('tpl');
+    const pid = params.get('project');
+    if (pid) {
+      const p = UQ.db.project(this.user.id, pid);
+      if (p) {
+        this.state.projectId = p.id;
+        this.state.filename = p.name;
+        this.state.transcript = p.transcript;
+        this.state.draft = p.transcript;
+        this.state.style.tpl = p.tpl;
+        this.state.style.ratio = p.ratio;
+      }
+    }
+    if (params.get('pick')) setTimeout(() => this.input.click(), 200);
+  },
+
+  bindStatic() {
+    this.input.addEventListener('change', e => this.loadFile(e.target.files && e.target.files[0]));
+    UQ.ui.el('#pickFile').addEventListener('click', () => this.input.click());
+    UQ.ui.el('#saveProject').addEventListener('click', () => this.saveProject());
+    UQ.ui.el('#playBtn').addEventListener('click', () => this.togglePlay());
+    UQ.ui.el('#safeBtn').addEventListener('click', () => { this.state.safe = !this.state.safe; this.renderStage(); });
+    UQ.ui.el('#scrub').addEventListener('click', e => {
+      const r = e.currentTarget.getBoundingClientRect();
+      this.seek(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * (this.state.duration || 8));
+    });
+    this.video.addEventListener('loadedmetadata', () => { this.state.duration = this.video.duration || 0; this.recompute(); this.renderAll(); });
+    this.video.addEventListener('ended', () => { this.state.playing = false; this.renderTransport(); });
+
+    UQ.ui.els('[data-ratio]').forEach(b => b.addEventListener('click', () => {
+      this.state.style.ratio = b.dataset.ratio;
+      this.renderStage();
+      UQ.ui.els('[data-ratio]').forEach(x => x.classList.toggle('is-on', x === b));
+    }));
+    UQ.ui.els('[data-tab]').forEach(b => b.addEventListener('click', () => this.setTab(b.dataset.tab)));
+  },
+
+  setTab(tab) {
+    this.state.tab = tab;
+    UQ.ui.els('[data-tab]').forEach(x => x.classList.toggle('is-on', x.dataset.tab === tab));
+    UQ.ui.els('[data-panel]').forEach(p => p.classList.toggle('hidden', p.dataset.panel !== tab));
+  },
+
+  /* ---------- file ---------- */
+  loadFile(file) {
+    if (!file || !/^(video|audio)\//.test(file.type)) return;
+    if (this.state.url) URL.revokeObjectURL(this.state.url);
+    this.state.file = file;
+    this.state.url = URL.createObjectURL(file);
+    this.state.filename = file.name;
+    this.state.time = 0;
+    this.state.segments = null;
+    this.state.speechTotal = 0;
+    this.state.renderDone = false;
+    this.state.renderPct = 0;
+    this.video.src = this.state.url;
+    this.renderAll();
+    setTimeout(() => this.analyse(), 150);   // auto vocal sync on upload
+  },
+
+  /* ---------- playback ---------- */
+  togglePlay() {
+    if (!this.state.url) return;
+    if (this.video.paused) { this.video.play().catch(() => {}); this.state.playing = true; }
+    else { this.video.pause(); this.state.playing = false; }
+    this.renderTransport();
+  },
+  seek(t) {
+    this.state.time = t;
+    if (this.state.url) this.video.currentTime = t;
+    this.paintFrame();
+  },
+
+  /* ---------- engine ---------- */
+  recompute() {
+    const s = this.state;
+    s.lines = UQ.captions.lines({
+      words: UQ.captions.words(s.transcript, s.cutFiller),
+      wordsPerLine: s.style.wpl,
+      duration: s.duration,
+      segments: s.vocalSync ? s.segments : null,
+      speechTotal: s.speechTotal
+    });
+  },
+
+  async analyse() {
+    const s = this.state;
+    if (!s.file) { s.note = 'Load a clip first — then this locks the caption timing to its voice.'; this.renderSyncCard(); return; }
+    if (s.analysing) return;
+    s.analysing = true;
+    UQ.ui.progress.open('Generating captions', 'Listening to the clip and locking every word to the voice.', UQ.audioSync.STEPS);
+    const result = await UQ.audioSync.analyse(s.file, {
+      sensitivity: s.sensitivity,
+      onProgress: (pct, step) => UQ.ui.progress.set(pct, step)
+    });
+    UQ.ui.progress.close();
+    s.analysing = false;
+    s.segments = result.segments;
+    s.speechTotal = result.speechTotal;
+    s.note = result.note;
+    if (result.segments) s.vocalSync = true;
+    this.recompute();
+    this.renderAll();
+  },
+
+  transcribe(mode) {
+    const s = this.state;
+    if (UQ.speech.listening()) return UQ.speech.stop();
+    if (mode === 'clip' && !s.file) { s.note = 'Load a clip first, then hit Auto-transcribe.'; return this.renderSyncCard(); }
+    this.setTab('text');
+    UQ.speech.start({
+      mode,
+      lang: 'Auto-detect',
+      video: this.video,
+      duration: s.duration,
+      onText: (text, interim) => {
+        s.draft = text;
+        s.transcript = text;
+        s.live = interim ? text : '';
+        const ta = UQ.ui.el('#transcript');
+        if (ta) ta.value = text;
+        this.recompute();
+        this.renderSyncCard();
+        this.renderTextPanel();
+      },
+      onState: (state, note) => {
+        s.note = note;
+        s.live = state === 'listening' ? s.live : '';
+        this.renderSyncCard();
+        if (state === 'stopped') {
+          s.draft = s.transcript;
+          this.setTab('text');
+          this.renderTextPanel();
+          const ta = UQ.ui.el('#transcript');
+          if (ta) { ta.focus(); ta.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+          UQ.ui.toast('Script ready — edit it, then Apply');
+          if (s.file) this.analyse();
+        }
+      }
+    });
+  },
+
+  /* Commit the edited draft into captions (and re-sync voice if possible). */
+  async applyScript() {
+    const s = this.state;
+    const ta = UQ.ui.el('#transcript');
+    const text = (ta ? ta.value : s.draft || '').trim();
+    if (!text) return UQ.ui.toast('Script is empty — paste or transcribe first');
+    s.draft = text;
+    s.transcript = text;
+    this.recompute();
+    this.renderAll();
+    if (s.file && s.vocalSync) {
+      s.note = 'Script applied — re-syncing to the voice…';
+      this.renderSyncCard();
+      await this.analyse();
+    } else {
+      UQ.ui.toast('Captions updated from your edit');
+    }
+  },
+
+  resetScript() {
+    const s = this.state;
+    s.draft = s.transcript;
+    const ta = UQ.ui.el('#transcript');
+    if (ta) ta.value = s.transcript;
+    this.renderTextPanel();
+    UQ.ui.toast('Edits discarded');
+  },
+
+  /* ---------- project ---------- */
+  saveProject() {
+    const s = this.state;
+    const list = UQ.db.saveProject(this.user.id, {
+      id: s.projectId,
+      name: s.filename || 'Untitled draft',
+      tpl: s.style.tpl,
+      ratio: s.style.ratio,
+      transcript: s.transcript,
+      lines: s.lines.length,
+      dur: UQ.ui.clock(s.duration),
+      synced: !!(s.vocalSync && s.segments)
+    });
+    s.projectId = list[0].id;
+    UQ.db.addEvent(this.user.id, { icon: '▤', tone: 'purple', text: 'Saved “' + (s.filename || 'Untitled draft') + '”' });
+    UQ.ui.toast('Project saved');
+  },
+
+  /* ---------- render ---------- */
+  renderAll() {
+    this.renderHeader();
+    this.renderStage();
+    this.renderTransport();
+    this.renderSyncCard();
+    this.renderStylePanel();
+    this.renderTextPanel();
+    this.renderExportPanel();
+    this.paintFrame(true);
+  },
+
+  renderHeader() {
+    const tpl = UQ.config.templates.find(t => t.id === this.state.style.tpl);
+    UQ.ui.el('#clipName').textContent = this.state.filename || 'Untitled draft';
+    UQ.ui.el('#tplBadge').textContent = tpl.name + ' · ' + tpl.kind;
+    UQ.ui.els('[data-ratio]').forEach(b => b.classList.toggle('is-on', b.dataset.ratio === this.state.style.ratio));
+  },
+
+  renderStage() {
+    const s = this.state;
+    const cls = { '9:16': 'stage--916', '1:1': 'stage--11', '16:9': 'stage--169' }[s.style.ratio];
+    this.stage.className = 'stage ' + cls;
+    UQ.captions.applyStyle(this.stage, s.style);
+    UQ.ui.el('#stageEmpty').classList.toggle('hidden', !!s.url);
+    this.video.classList.toggle('hidden', !s.url);
+    UQ.ui.el('#safeBox').classList.toggle('hidden', !s.safe);
+    UQ.ui.el('#watermark').classList.toggle('hidden', this.user.plan !== 'Free');
+    UQ.ui.el('#safeBtn').classList.toggle('is-on', s.safe);
+  },
+
+  renderTransport() {
+    const s = this.state;
+    UQ.ui.el('#playBtn').textContent = s.playing ? '❚❚' : '▶';
+    UQ.ui.el('#timeLabel').textContent = UQ.ui.clock(s.time) + ' / ' + UQ.ui.clock(s.duration || 8);
+    const pct = Math.min(100, (s.time / (s.duration || 8)) * 100);
+    UQ.ui.el('#scrubFill').style.width = pct + '%';
+    UQ.ui.el('#scrubHead').style.left = 'calc(' + pct + '% - 7px)';
+
+    const strip = UQ.ui.el('#voiceStrip');
+    const on = !!(s.vocalSync && s.segments);
+    strip.classList.toggle('hidden', !on);
+    if (on) {
+      UQ.ui.el('#voiceRail').innerHTML = s.segments.map(seg => {
+        const left = (seg.start / (s.duration || 8)) * 100;
+        const width = Math.max(.4, ((seg.end - seg.start) / (s.duration || 8)) * 100);
+        return '<div class="voice-strip__seg" style="left:' + left + '%;width:' + width + '%"></div>';
+      }).join('');
+    }
+
+    UQ.ui.el('#wordChips').innerHTML = s.lines.map(l =>
+      l.words.map(w => '<button class="word-chip" data-seek="' + l.start.toFixed(3) + '">' + UQ.ui.esc(w) + '</button>').join('')
+    ).join('');
+    UQ.ui.els('[data-seek]', UQ.ui.el('#wordChips')).forEach(b =>
+      b.addEventListener('click', () => this.seek(parseFloat(b.dataset.seek) + .01)));
+  },
+
+  renderSyncCard() {
+    const s = this.state;
+    const synced = !!(s.vocalSync && s.segments);
+    UQ.ui.els('[data-sync-chip]').forEach(el => {
+      el.textContent = synced ? 'Voice-synced' : 'Even spacing';
+      el.className = 'badge ' + (synced ? 'badge--teal' : '') + ' ';
+      el.setAttribute('data-sync-chip', '');
+    });
+    UQ.ui.els('[data-sync-note]').forEach(el => {
+      el.textContent = s.note || (synced ? 'Timing is locked to the detected voice.' : 'Captions stay evenly spaced until the audio is analysed.');
+    });
+    UQ.ui.el('#vocalToggle').classList.toggle('is-on', s.vocalSync);
+    UQ.ui.el('#sensValue').textContent = s.sensitivity <= 3 ? 'Low — only clear speech' : s.sensitivity >= 8 ? 'High — catches quiet talking' : 'Balanced';
+    UQ.ui.el('#analyseBtn').textContent = s.analysing ? 'Analysing…' : s.segments ? 'Re-analyse audio' : 'Analyse audio & sync';
+    UQ.ui.el('#listenBtn').textContent = UQ.speech.listening() ? 'Stop listening' : 'Auto-transcribe clip';
+    const live = UQ.ui.el('#liveText');
+    live.classList.toggle('hidden', !s.live);
+    live.textContent = s.live;
+  },
+
+  renderStylePanel() {
+    const s = this.state, st = s.style;
+    const sel = UQ.ui.el('#tplSelect');
+    if (!sel.options.length) {
+      sel.innerHTML = UQ.config.templates.map(t => '<option value="' + t.id + '">' + t.name + ' — ' + t.kind + '</option>').join('');
+      sel.addEventListener('change', () => { st.tpl = sel.value; this.renderHeader(); this.renderStage(); this.paintFrame(true); });
+
+      const fonts = UQ.ui.el('#fontPicker');
+      fonts.innerHTML = (UQ.config.captionFonts || []).map(f =>
+        '<button type="button" class="chip" data-font="' + f.id + '" style="font-family:' + f.stack + '">' + f.name + '</button>'
+      ).join('');
+
+      const emojis = UQ.ui.el('#emojiPicker');
+      emojis.innerHTML = (UQ.config.captionEmojis || []).map(e =>
+        '<button type="button" class="chip chip--emoji" data-emoji="' + e + '">' + (e || 'none') + '</button>'
+      ).join('');
+
+      const bind = (id, key, fn) => UQ.ui.el(id).addEventListener('input', e => {
+        st[key] = fn(e.target.value);
+        this.recompute();
+        this.renderStage();
+        this.renderStylePanel();
+        this.renderTransport();
+        this.paintFrame(true);
+      });
+      bind('#sizeRange', 'size', parseFloat);
+      bind('#posRange', 'pos', parseInt);
+      bind('#strokeRange', 'stroke', parseInt);
+      bind('#speedRange', 'speed', parseFloat);
+      bind('#wplRange', 'wpl', parseInt);
+
+      fonts.addEventListener('click', e => {
+        const b = e.target.closest('[data-font]');
+        if (!b) return;
+        st.font = b.dataset.font;
+        this.renderStage();
+        this.renderStylePanel();
+        this.paintFrame(true);
+      });
+      emojis.addEventListener('click', e => {
+        const b = e.target.closest('[data-emoji]');
+        if (!b) return;
+        st.emoji = b.dataset.emoji;
+        this.renderStylePanel();
+        this.paintFrame(true);
+      });
+      UQ.ui.els('[data-color]').forEach(b => b.addEventListener('click', () => { st.color = b.dataset.color; this.renderStage(); this.renderStylePanel(); }));
+      UQ.ui.els('[data-hl]').forEach(b => b.addEventListener('click', () => { st.hl = b.dataset.hl; this.renderStage(); this.renderStylePanel(); }));
+      UQ.ui.el('#shadowToggle').addEventListener('click', () => { st.shadow = !st.shadow; this.renderStage(); this.renderStylePanel(); });
+      UQ.ui.el('#upperToggle').addEventListener('click', () => { st.upper = !st.upper; this.renderStylePanel(); this.paintFrame(true); });
+    }
+
+    sel.value = st.tpl;
+    UQ.ui.el('#sizeRange').value = st.size;
+    UQ.ui.el('#posRange').value = st.pos;
+    UQ.ui.el('#strokeRange').value = st.stroke;
+    UQ.ui.el('#speedRange').value = st.speed;
+    UQ.ui.el('#wplRange').value = st.wpl;
+    UQ.ui.el('#sizeValue').textContent = st.size + '%';
+    UQ.ui.el('#posValue').textContent = st.pos + '%';
+    UQ.ui.el('#strokeValue').textContent = st.stroke === 0 ? 'off' : st.stroke;
+    UQ.ui.el('#speedValue').textContent = st.speed.toFixed(1) + '×';
+    UQ.ui.el('#wplValue').textContent = st.wpl;
+    UQ.ui.el('#shadowState').textContent = st.shadow ? 'on' : 'off';
+    UQ.ui.el('#upperState').textContent = st.upper ? 'on' : 'off';
+    UQ.ui.el('#shadowToggle').classList.toggle('is-on', st.shadow);
+    UQ.ui.el('#upperToggle').classList.toggle('is-on', st.upper);
+    UQ.ui.els('[data-font]').forEach(b => b.classList.toggle('is-on', b.dataset.font === st.font));
+    UQ.ui.els('[data-color]').forEach(b => b.classList.toggle('is-on', b.dataset.color === st.color));
+    UQ.ui.els('[data-hl]').forEach(b => b.classList.toggle('is-on', b.dataset.hl === st.hl));
+    UQ.ui.els('[data-emoji]').forEach(b => b.classList.toggle('is-on', b.dataset.emoji === st.emoji));
+  },
+
+  renderTextPanel() {
+    const s = this.state;
+    const ta = UQ.ui.el('#transcript');
+    if (!ta.dataset.bound) {
+      ta.dataset.bound = '1';
+      ta.value = s.draft || s.transcript;
+      ta.addEventListener('input', () => {
+        s.draft = ta.value;
+        this.renderTextPanel();
+      });
+      UQ.ui.el('#applyScriptBtn').addEventListener('click', () => this.applyScript());
+      UQ.ui.el('#resetScriptBtn').addEventListener('click', () => this.resetScript());
+      UQ.ui.el('#fillerToggle').addEventListener('click', () => { s.cutFiller = !s.cutFiller; this.recompute(); this.renderAll(); });
+      UQ.ui.el('#vocalToggle').addEventListener('click', () => {
+        s.vocalSync = !s.vocalSync;
+        s.note = s.vocalSync
+          ? (s.segments ? 'Vocal sync back on — captions follow the voice.' : 'Vocal sync on — analysing the clip…')
+          : 'Vocal sync off — captions are spread evenly across the clip.';
+        if (s.vocalSync && !s.segments && s.file) this.analyse();
+        this.recompute();
+        this.renderAll();
+      });
+      const sens = UQ.ui.el('#sensRange');
+      sens.addEventListener('input', () => { s.sensitivity = parseInt(sens.value, 10); this.renderSyncCard(); });
+      sens.addEventListener('change', () => { if (s.file) this.analyse(); });
+      UQ.ui.el('#analyseBtn').addEventListener('click', () => this.analyse());
+      UQ.ui.el('#listenBtn').addEventListener('click', () => this.transcribe('clip'));
+      UQ.ui.el('#dictateBtn').addEventListener('click', () => this.transcribe('mic'));
+    }
+    if (document.activeElement !== ta) ta.value = s.draft || s.transcript;
+
+    const dirty = (s.draft || '') !== (s.transcript || '');
+    const dirtyEl = UQ.ui.el('#scriptDirty');
+    if (dirtyEl) dirtyEl.classList.toggle('hidden', !dirty);
+    const applyBtn = UQ.ui.el('#applyScriptBtn');
+    if (applyBtn) applyBtn.classList.toggle('btn--busy', false);
+
+    UQ.ui.el('#wordStats').textContent =
+      UQ.captions.words(s.transcript, s.cutFiller).length + ' words · ' + s.lines.length + ' lines · ' + s.style.wpl + ' per line' +
+      (dirty ? ' · edits pending' : '');
+    UQ.ui.el('#fillerToggle').classList.toggle('is-on', s.cutFiller);
+    UQ.ui.el('#fillerState').textContent = s.cutFiller ? 'on' : 'off';
+    UQ.ui.el('#cutCount').textContent = s.cutFiller ? UQ.captions.fillerCount(s.transcript) : 0;
+    UQ.ui.el('#sensRange').value = s.sensitivity;
+
+    UQ.ui.el('#lineList').innerHTML = s.lines.map(l =>
+      '<button class="line-row" data-line="' + l.start.toFixed(3) + '"><time>' + UQ.ui.clock(l.start) + '</time><span>' + UQ.ui.esc(l.words.join(' ')) + '</span></button>'
+    ).join('');
+    UQ.ui.els('[data-line]').forEach(b => b.addEventListener('click', () => this.seek(parseFloat(b.dataset.line) + .01)));
+  },
+
+  renderExportPanel() {
+    const s = this.state, paid = this.user.plan !== 'Free';
+    UQ.ui.el('#exportRatio').textContent = 'MP4 · ' + s.style.ratio;
+    UQ.ui.el('#exportQuality').textContent = paid ? '4K · no watermark' : '720p · corner mark';
+    UQ.ui.el('#exportNote').textContent = paid
+      ? 'Clean export at up to 4K — no watermark, full bitrate.'
+      : 'Free exports carry a small corner mark and cap at 720p. Any credit pack removes both.';
+    UQ.ui.el('#renderFill').style.width = s.renderPct + '%';
+    UQ.ui.el('#renderBtn').textContent = s.rendering
+      ? 'Rendering ' + Math.round(s.renderPct) + '%'
+      : s.renderDone ? 'Download MP4' : 'Render burned-in MP4';
+    UQ.ui.el('#renderCost').textContent = s.renderDone
+      ? 'Done · ' + this.user.minutes + ' min left'
+      : 'Uses ' + (Math.round((s.duration || 30) / 6) / 10 || 0.5) + ' min of credit';
+
+    if (!UQ.ui.el('#renderBtn').dataset.bound) {
+      UQ.ui.el('#renderBtn').dataset.bound = '1';
+      UQ.ui.el('#renderBtn').addEventListener('click', () => this.render());
+      const files = { srt: '#dlSrt', vtt: '#dlVtt', txt: '#dlTxt' };
+      Object.entries(files).forEach(([kind, sel]) => UQ.ui.el(sel).addEventListener('click', () =>
+        UQ.exporter.captionFile(kind, this.state.lines, { upper: this.state.style.upper, filename: this.state.filename })));
+    }
+  },
+
+  render() {
+    const s = this.state;
+    if (s.rendering) return;
+    if (s.renderDone) { s.renderDone = false; s.renderPct = 0; return this.renderExportPanel(); }
+    s.rendering = true;
+    UQ.ui.progress.open('Rendering your video', 'Captions are being burned into the clip — you can keep this open.', UQ.exporter.STEPS);
+    UQ.exporter.renderVideo({
+      duration: s.duration,
+      onProgress: (pct, step) => { s.renderPct = pct; UQ.ui.progress.set(pct, step); this.renderExportPanel(); },
+      onDone: minutes => {
+        UQ.ui.progress.close();
+        s.rendering = false;
+        s.renderDone = true;
+        this.user = UQ.db.spendMinutes(this.user.id, minutes);
+        UQ.db.addEvent(this.user.id, { icon: '↓', tone: 'purple', text: 'Rendered a video — ' + minutes + ' min used' });
+        UQ.shell.refresh('editor', 'Caption editor');
+        this.renderExportPanel();
+        UQ.ui.toast('Render finished · ' + minutes + ' min used');
+      }
+    });
+  },
+
+  paintFrame(force) {
+    if (force) this.cap.dataset.key = '';
+    UQ.captions.render(this.cap, { lines: this.state.lines, time: this.state.time, style: this.state.style });
+    if (force) return;
+    const pct = Math.min(100, (this.state.time / (this.state.duration || 8)) * 100);
+    UQ.ui.el('#scrubFill').style.width = pct + '%';
+    UQ.ui.el('#scrubHead').style.left = 'calc(' + pct + '% - 7px)';
+    UQ.ui.el('#timeLabel').textContent = UQ.ui.clock(this.state.time) + ' / ' + UQ.ui.clock(this.state.duration || 8);
+  }
+};
+
+UQ.start(() => UQ.editor.init());

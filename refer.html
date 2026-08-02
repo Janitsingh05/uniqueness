@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Refer &amp; earn · uniqueness</title>
+<link rel="icon" href="assets/images/uniqueness-logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/layout.css" />
+<link rel="stylesheet" href="css/components.css" />
+<link rel="stylesheet" href="css/pages.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside id="sidebar" class="sidebar"></aside>
+  <div class="app-main">
+    <header id="topbar" class="topbar"></header>
+
+    <main class="page page--narrow">
+      <div class="page__head">
+        <h1>Give 30 minutes, get <span class="grad-text">20%</span></h1>
+        <p class="lead" style="max-width:520px">Your link hands every new creator 30 free captioning minutes. When they buy credits, you earn 20% of it for 12 months — in cash or minutes, your call.</p>
+      </div>
+
+      <section class="card card--pad" style="margin-bottom:16px">
+        <span class="eyebrow" style="display:block;margin-bottom:12px">Your link</span>
+        <div class="row-wrap">
+          <input class="input grow" id="refLink" readonly style="min-width:220px;font-family:var(--mono);font-size:12.5px" />
+          <button class="btn btn--primary" id="copyLink" style="padding:14px 22px">Copy link</button>
+        </div>
+        <p style="font-size:12px;color:var(--faint);margin-top:11px">Anyone signing up through this link is tied to your account automatically.</p>
+      </section>
+
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:14px;margin-bottom:16px">
+        <div class="metric"><div class="metric__label">Signed up</div><div class="metric__value" id="mJoined">0</div></div>
+        <div class="metric"><div class="metric__label">Bought credits</div><div class="metric__value" id="mPaid">0</div></div>
+        <div class="metric metric--tint"><div class="metric__label">Available now</div><div class="metric__value" id="mAvailable">₹0</div></div>
+        <div class="metric"><div class="metric__label">Lifetime earned</div><div class="metric__value" id="mLifetime">₹0</div></div>
+      </div>
+
+      <div class="grid grid--split">
+        <section class="card card--pad">
+          <h3 style="font-size:13.5px;margin-bottom:12px">Request a payout</h3>
+          <p style="font-size:12.5px;color:var(--mut);margin-bottom:15px;line-height:1.55">Withdraw once your balance crosses ₹500. Payouts clear in 3 working days after a 14-day hold.</p>
+          <label class="field" for="upi">UPI ID</label>
+          <input class="input" id="upi" placeholder="yourname@bank" style="margin-bottom:13px" />
+          <button class="btn btn--primary btn--block" id="payoutBtn">Request payout</button>
+          <p style="font-size:11.5px;color:var(--faint);margin-top:11px">Your code: <b id="refCode" style="color:var(--purple-deep)"></b></p>
+        </section>
+
+        <section class="card card--pad">
+          <h3 style="font-size:13.5px;margin-bottom:15px">How it works</h3>
+          <div class="stack" style="gap:15px">
+            <div class="row" style="align-items:flex-start;gap:12px"><span class="step-num">1</span><span style="font-size:13px;color:var(--body);line-height:1.5">Share your link anywhere — bio, community, DM.</span></div>
+            <div class="row" style="align-items:flex-start;gap:12px"><span class="step-num">2</span><span style="font-size:13px;color:var(--body);line-height:1.5">They start with 30 free minutes instead of 3.</span></div>
+            <div class="row" style="align-items:flex-start;gap:12px"><span class="step-num">3</span><span style="font-size:13px;color:var(--body);line-height:1.5">Every credit pack they buy pays you 20% for a year.</span></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/account.js"></script>
+<script>UQ.start(() => UQ.refer.init());</script>
+</body>
+</html>

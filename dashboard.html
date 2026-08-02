@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dashboard · uniqueness</title>
+<link rel="icon" href="assets/images/uniqueness-logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/layout.css" />
+<link rel="stylesheet" href="css/components.css" />
+<link rel="stylesheet" href="css/captions.css" />
+<link rel="stylesheet" href="css/pages.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside id="sidebar" class="sidebar"></aside>
+  <div class="app-main">
+    <header id="topbar" class="topbar"></header>
+
+    <main class="page">
+      <div class="grid grid--hero" style="margin-bottom:28px">
+        <div>
+          <div class="row" style="gap:9px;margin-bottom:14px">
+            <span style="color:var(--purple);font-size:17px">✦</span>
+            <span id="today" style="font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--faint)"></span>
+          </div>
+          <h1 style="font-size:clamp(28px,4vw,40px);line-height:1.08;margin-bottom:14px">Turn audio &amp; video<br />into <span class="grad-text">engaging captions</span></h1>
+          <p class="lead" style="max-width:410px;margin-bottom:22px">Word-level timing, 11 kinetic styles, and exports that drop straight onto your timeline.</p>
+          <div class="row-wrap">
+            <button class="btn btn--primary btn--lg" id="uploadBtn"><span>↑</span> Upload media</button>
+            <a class="btn btn--ghost btn--lg" href="templates.html">Browse templates <span style="color:var(--purple)">→</span></a>
+          </div>
+        </div>
+
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone__icon">↑</div>
+          <div style="font-size:17px;font-weight:700;margin-bottom:5px">Drag &amp; drop your file here</div>
+          <div style="font-size:14px;color:var(--mut);margin-bottom:14px">or <span style="color:#6D34E8;font-weight:600">click to browse</span></div>
+          <div style="font-size:12px;color:var(--faint);line-height:1.7">Supports MP4, MOV, WEBM<br />Max file size 2GB · processed in your browser</div>
+        </div>
+      </div>
+      <input type="file" id="fileInput" accept="video/*,audio/*" class="hidden" />
+
+      <div class="grid grid--stats" id="stats" style="margin-bottom:30px"></div>
+
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin-bottom:30px">
+        <section class="card" style="grid-column:span 2;min-width:0;overflow:hidden">
+          <div class="card__head">
+            <span class="card__title">Recent projects</span>
+            <a class="btn--link" href="search.html">View all</a>
+          </div>
+          <div id="projects"></div>
+        </section>
+
+        <section class="card" style="min-width:0">
+          <div class="card__head"><span class="card__title">Activity</span></div>
+          <div class="card__body stack" id="activity" style="gap:16px"></div>
+        </section>
+      </div>
+
+      <div class="spread" style="margin-bottom:14px">
+        <h2>Start from a style</h2>
+        <a class="btn--link" href="templates.html">Open templates library →</a>
+      </div>
+      <div class="grid grid--tiles" id="styleTiles"></div>
+    </main>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/preview-tiles.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>

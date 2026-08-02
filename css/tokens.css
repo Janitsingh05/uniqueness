@@ -1,0 +1,61 @@
+/* ============================================================
+   tokens.css — the single source of truth for the brand.
+   Change a value here and it updates across every page.
+   ============================================================ */
+
+:root {
+  /* Brand colours (taken from the uniqueness logo gradient) */
+  --brand-violet: #5B1E9E;
+  --brand-indigo: #3D53AC;
+  --brand-blue:   #2E7BB8;
+  --brand-teal:   #14B8C4;
+
+  --purple:       #7C4DFF;  /* primary action */
+  --purple-soft:  #8B5CFF;
+  --purple-deep:  #5B21B6;
+  --purple-tint:  #F3EEFF;  /* tinted backgrounds */
+  --purple-line:  #E0D6FA;
+  --teal-tint:    #E6FAFB;
+  --teal-line:    #C7F0F3;
+  --teal-text:    #0E7C86;
+
+  --grad:      linear-gradient(135deg, var(--purple-soft), var(--purple-deep));
+  --grad-text: linear-gradient(90deg, var(--brand-violet), var(--brand-indigo), var(--brand-blue), var(--brand-teal));
+  --grad-hero: linear-gradient(135deg, var(--brand-violet), var(--brand-indigo), var(--brand-teal));
+
+  /* Neutrals */
+  --ink:    #14141C;  /* headings + body */
+  --body:   #4B4F5E;  /* secondary body copy */
+  --mut:    #6E7180;  /* muted labels */
+  --faint:  #A3A8B8;  /* placeholder / disabled */
+  --line:   #E4E6F0;  /* input + button borders */
+  --hair:   #ECEDF5;  /* card borders */
+  --rule:   #F1F2F8;  /* internal dividers */
+  --bg:     #F7F8FC;  /* page background */
+  --card:   #FFFFFF;
+  --sunken: #F7F8FC;  /* inputs, inset rows */
+  --stage:  linear-gradient(160deg, #1B1B26, #12121A); /* video preview tiles */
+
+  /* Status */
+  --danger:      #C0392B;
+  --danger-bg:   #FFF3F3;
+  --danger-line: #F5C6C6;
+
+  /* Type */
+  --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --serif: 'Instrument Serif', Georgia, serif;
+
+  /* Shape + depth */
+  --r-sm: 10px;
+  --r-md: 13px;
+  --r-lg: 18px;
+  --r-xl: 22px;
+  --shadow-card: 0 1px 2px rgba(20, 20, 40, .04);
+  --shadow-pop:  0 40px 80px -30px rgba(20, 20, 40, .45);
+  --shadow-btn:  0 10px 20px -12px rgba(91, 33, 182, .6);
+
+  /* Layout */
+  --sidebar-w: 256px;
+  --page-max: 1240px;
+}

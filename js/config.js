@@ -133,6 +133,13 @@ UQ.config = {
     minSegment: 0.12      // ignore blips shorter than this
   },
 
+  /* Upload → auto captions. Whisper runs in the browser (free, no key).
+     First use downloads a ~40MB model once, then caches it. */
+  autoCaption: {
+    onUpload: true,
+    model: 'Xenova/whisper-tiny'
+  },
+
   /* Speech-to-text language codes.
      Uses Google Chrome / Edge Web Speech API (free, no key).
      That API is powered by Google's speech recogniser in-browser. */

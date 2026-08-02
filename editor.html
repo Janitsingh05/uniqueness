@@ -158,14 +158,14 @@
           <div class="card card--tint" style="padding:16px">
             <div class="row" style="gap:9px;margin-bottom:12px">
               <span style="color:var(--purple);font-size:14px">✦</span>
-              <span style="font-size:13.5px;font-weight:700">Auto transcription</span>
+              <span style="font-size:13.5px;font-weight:700">Auto captions from voice</span>
               <span class="badge" data-sync-chip>Even spacing</span>
             </div>
 
             <div class="row" style="gap:12px;padding:11px 13px;border-radius:12px;background:#fff;border:1px solid var(--purple-line);margin-bottom:11px">
               <div class="grow">
-                <div style="font-size:12.5px;font-weight:700;margin-bottom:3px">Auto vocal sync</div>
-                <div style="font-size:11.5px;color:var(--mut);line-height:1.4">Break lines where the speaker pauses and start each one on the voice.</div>
+                <div style="font-size:12.5px;font-weight:700;margin-bottom:3px">Exact voice match</div>
+                <div style="font-size:11.5px;color:var(--mut);line-height:1.4">Upload a clip and captions build automatically — every word locks to the spoken audio.</div>
               </div>
               <button class="switch is-on" id="vocalToggle"><span></span></button>
             </div>
@@ -174,8 +174,8 @@
             <input class="range" type="range" id="sensRange" min="1" max="10" step="1" style="margin-bottom:13px" />
 
             <div class="row-wrap" style="gap:8px;margin-bottom:9px">
-              <button class="btn btn--ghost" id="listenBtn" style="flex:1;min-width:148px">Auto-transcribe clip</button>
-              <button class="btn btn--primary" id="analyseBtn" style="flex:1;min-width:148px">Analyse audio &amp; sync</button>
+              <button class="btn btn--primary" id="listenBtn" style="flex:1;min-width:148px">Auto-caption from clip</button>
+              <button class="btn btn--ghost" id="analyseBtn" style="flex:1;min-width:148px">Re-sync timing</button>
             </div>
             <button class="btn btn--quiet btn--block" id="dictateBtn">Dictate with mic instead</button>
 
@@ -185,14 +185,14 @@
 
           <div class="panel__group">
             <span class="eyebrow">Edit script</span>
-            <p style="font-size:12px;color:var(--mut);line-height:1.5;margin-bottom:10px">After transcription, edit the text here — then Apply to update captions (and re-sync timing if a clip is loaded).</p>
-            <textarea class="textarea" id="transcript" rows="9" placeholder="Your script appears here after Auto-transcribe…"></textarea>
+            <p style="font-size:12px;color:var(--mut);line-height:1.5;margin-bottom:10px">Change any word — captions adjust live to your script and stay on the voice. Use Apply for a full re-match.</p>
+            <textarea class="textarea" id="transcript" rows="9" placeholder="Your script appears here after Auto-caption…"></textarea>
             <div class="row-wrap" style="gap:8px;margin-top:10px">
-              <button class="btn btn--primary" id="applyScriptBtn" style="flex:1">Apply to captions</button>
-              <button class="btn btn--quiet" id="resetScriptBtn" title="Undo edits back to last applied">Reset</button>
+              <button class="btn btn--primary" id="applyScriptBtn" style="flex:1">Re-match to voice</button>
+              <button class="btn btn--quiet" id="resetScriptBtn" title="Undo edits">Reset</button>
             </div>
             <div style="font-size:11.5px;color:var(--faint);margin-top:9px;font-weight:600" id="wordStats"></div>
-            <div class="alert alert--info hidden" id="scriptDirty" style="margin-top:10px">You have unsaved edits — hit Apply to update captions.</div>
+            <div class="alert alert--info hidden" id="scriptDirty" style="margin-top:10px"></div>
           </div>
 
           <button class="toggle-row is-on" id="fillerToggle"><span>Cut filler words (um, uh, like)</span><span id="fillerState">on</span></button>
@@ -248,6 +248,7 @@
 <script src="js/shell.js"></script>
 <script src="js/captions.js"></script>
 <script src="js/audio-sync.js"></script>
+<script src="js/whisper.js"></script>
 <script src="js/speech.js"></script>
 <script src="js/exporter.js"></script>
 <script src="js/editor.js"></script>

@@ -33,47 +33,24 @@ UQ.captions = {
   },
 
   /* Build caption lines.
-     opts: { words, wordsPerLine, duration, segments, speechTotal }
-     With segments, lines break where the speaker pauses and start
-     exactly on the voice. Without, words spread evenly. */
+     opts: { words, wordsPerLine, duration, segments, speechTotal, timedWords, energy }
+     Priority:
+       1. timedWords (Whisper word timestamps) — exact voice match
+       2. segments + energy — words land on louder speech
+       3. even spacing fallback */
   lines(opts) {
-    const w = opts.words, n = Math.max(1, opts.wordsPerLine);
-    if (!w.length) return [];
+    const n = Math.max(1, opts.wordsPerLine);
+
+    if (opts.timedWords && opts.timedWords.length) {
+      return this.linesFromTimed(opts.timedWords, n, opts.cutFiller);
+    }
+
+    const w = opts.words;
+    if (!w || !w.length) return [];
 
     const segs = opts.segments;
     if (segs && segs.length && opts.speechTotal > 0.3) {
-      const perWord = opts.speechTotal / w.length;
-      const counts = segs.map(s => Math.max(0, Math.round((s.end - s.start) / perWord)));
-      let diff = w.length - counts.reduce((a, b) => a + b, 0);
-      const order = segs.map((s, i) => i).sort((a, b) => (segs[b].end - segs[b].start) - (segs[a].end - segs[a].start));
-      let guard = 0;
-      while (diff !== 0 && order.length && guard++ < w.length * 4 + 40) {
-        const i = order[guard % order.length];
-        if (diff > 0) { counts[i]++; diff--; }
-        else if (counts[i] > 1) { counts[i]--; diff++; }
-      }
-      const out = [];
-      let cursor = 0;
-      segs.forEach((seg, si) => {
-        const take = w.slice(cursor, cursor + counts[si]);
-        cursor += counts[si];
-        if (!take.length) return;
-        const per = (seg.end - seg.start) / take.length;
-        for (let j = 0; j < take.length; j += n) {
-          const group = take.slice(j, j + n);
-          out.push({ words: group, start: seg.start + j * per, end: seg.start + (j + group.length) * per, i: out.length });
-        }
-      });
-      const rest = w.slice(cursor);
-      if (rest.length && out.length) {
-        let t = out[out.length - 1].end;
-        for (let j = 0; j < rest.length; j += n) {
-          const group = rest.slice(j, j + n);
-          out.push({ words: group, start: t, end: t + .4 * group.length, i: out.length });
-          t += .4 * group.length;
-        }
-      }
-      if (out.length) return out;
+      return this.linesFromSegments(w, n, segs, opts.speechTotal, opts.energy);
     }
 
     const chunks = [];
@@ -83,8 +60,110 @@ UQ.captions = {
     return chunks.map((ws, i) => ({ words: ws, start: i * per, end: (i + 1) * per, i }));
   },
 
+  /* Exact lyrics timing from ASR word timestamps. */
+  linesFromTimed(timedWords, n, cutFiller) {
+    let list = timedWords.map(w => ({
+      text: String(w.text || '').trim(),
+      start: w.start,
+      end: w.end
+    })).filter(w => w.text);
+    if (cutFiller) list = list.filter(w => !UQ.config.fillerWords.test(w.text));
+    if (!list.length) return [];
+    const out = [];
+    for (let i = 0; i < list.length; i += n) {
+      const group = list.slice(i, i + n);
+      out.push({
+        words: group.map(g => g.text),
+        start: group[0].start,
+        end: Math.max(group[group.length - 1].end, group[0].start + 0.08),
+        i: out.length,
+        wordTimes: group.map(g => ({ start: g.start, end: g.end }))
+      });
+    }
+    return out;
+  },
+
+  /* Distribute words across speech segments; prefer energy mass when available. */
+  linesFromSegments(w, n, segs, speechTotal, energy) {
+    const counts = segs.map(s => Math.max(0, Math.round((s.end - s.start) / (speechTotal / w.length))));
+    let diff = w.length - counts.reduce((a, b) => a + b, 0);
+    const order = segs.map((s, i) => i).sort((a, b) => (segs[b].end - segs[b].start) - (segs[a].end - segs[a].start));
+    let guard = 0;
+    while (diff !== 0 && order.length && guard++ < w.length * 4 + 40) {
+      const i = order[guard % order.length];
+      if (diff > 0) { counts[i]++; diff--; }
+      else if (counts[i] > 1) { counts[i]--; diff++; }
+    }
+    const out = [];
+    let cursor = 0;
+    segs.forEach((seg, si) => {
+      const take = w.slice(cursor, cursor + counts[si]);
+      cursor += counts[si];
+      if (!take.length) return;
+      const stamps = this._stampWords(take, seg, energy);
+      for (let j = 0; j < take.length; j += n) {
+        const group = take.slice(j, j + n);
+        const times = stamps.slice(j, j + group.length);
+        out.push({
+          words: group,
+          start: times[0].start,
+          end: times[times.length - 1].end,
+          i: out.length,
+          wordTimes: times
+        });
+      }
+    });
+    const rest = w.slice(cursor);
+    if (rest.length && out.length) {
+      let t = out[out.length - 1].end;
+      for (let j = 0; j < rest.length; j += n) {
+        const group = rest.slice(j, j + n);
+        out.push({ words: group, start: t, end: t + .4 * group.length, i: out.length });
+        t += .4 * group.length;
+      }
+    }
+    return out;
+  },
+
+  /* Place words inside a segment by cumulative audio energy (falls back to even). */
+  _stampWords(words, seg, energy) {
+    const span = Math.max(0.05, seg.end - seg.start);
+    if (!energy || !energy.frames || !energy.frames.length) {
+      const per = span / words.length;
+      return words.map((_, i) => ({
+        start: seg.start + i * per,
+        end: seg.start + (i + 1) * per
+      }));
+    }
+    const frameSec = energy.frameSec || 0.02;
+    const i0 = Math.max(0, Math.floor(seg.start / frameSec));
+    const i1 = Math.min(energy.frames.length - 1, Math.ceil(seg.end / frameSec));
+    const slice = energy.frames.slice(i0, i1 + 1);
+    const total = slice.reduce((a, b) => a + b, 0) || slice.length;
+    const target = total / words.length;
+    const stamps = [];
+    let acc = 0, wi = 0, startF = 0;
+    for (let i = 0; i < slice.length && wi < words.length; i++) {
+      acc += slice[i];
+      const last = wi === words.length - 1 && i === slice.length - 1;
+      if (acc >= target * (wi + 1) || last) {
+        const s = seg.start + startF * frameSec;
+        const e = seg.start + (i + 1) * frameSec;
+        stamps.push({ start: s, end: Math.max(s + 0.06, Math.min(seg.end, e)) });
+        startF = i + 1;
+        wi++;
+      }
+    }
+    while (stamps.length < words.length) {
+      const last = stamps[stamps.length - 1];
+      const s = last ? last.end : seg.start;
+      stamps.push({ start: s, end: Math.min(seg.end, s + span / words.length) });
+    }
+    return stamps;
+  },
+
   /* Which line + word is on screen at time t.
-     During a pause it holds the last spoken line (never flashes ahead). */
+     Uses per-word timestamps when present for exact karaoke match. */
   activeAt(lines, t) {
     if (!lines.length) return null;
     let line = lines.find(l => l.start <= t && t < l.end), gap = false;
@@ -94,10 +173,91 @@ UQ.captions = {
       for (const l of lines) { if (l.end <= t) prev = l; else break; }
       line = prev || lines[0];
     }
+
+    if (line.wordTimes && line.wordTimes.length === line.words.length) {
+      let index = 0;
+      for (let i = 0; i < line.wordTimes.length; i++) {
+        if (t >= line.wordTimes[i].start) index = i;
+      }
+      if (gap && line.end <= t) index = line.words.length - 1;
+      const wt = line.wordTimes[index];
+      const progress = wt && wt.end > wt.start
+        ? Math.min(.999, Math.max(0, (t - wt.start) / (wt.end - wt.start)))
+        : 0;
+      return { line, index, progress };
+    }
+
     const p = gap
       ? (line.end <= t ? .999 : 0)
       : Math.min(.999, Math.max(0, (t - line.start) / Math.max(.001, line.end - line.start)));
     return { line, index: Math.min(line.words.length - 1, Math.floor(p * line.words.length)), progress: p };
+  },
+
+  /* Stretch / shrink word timings so a new script still sits on the same voice window. */
+  fitWordsToSpan(wordList, t0, t1) {
+    const words = (wordList || []).filter(Boolean);
+    if (!words.length) return [];
+    const start = isFinite(t0) ? t0 : 0;
+    const end = isFinite(t1) && t1 > start ? t1 : start + Math.max(0.4, words.length * 0.32);
+    const span = Math.max(0.12, end - start);
+    /* Slight ease: longer words get a touch more time. */
+    const weights = words.map(w => Math.max(0.6, Math.min(2.2, String(w).replace(/[^\p{L}\p{N}]/gu, '').length / 4 || 1)));
+    const sum = weights.reduce((a, b) => a + b, 0) || words.length;
+    const out = [];
+    let cursor = start;
+    words.forEach((text, i) => {
+      const dur = span * (weights[i] / sum);
+      const next = i === words.length - 1 ? end : cursor + dur;
+      out.push({ text, start: cursor, end: Math.max(cursor + 0.05, next) });
+      cursor = next;
+    });
+    return out;
+  },
+
+  /* When the client edits lyrics, keep captions on the spoken timeline. */
+  retimefromScript(transcript, opts) {
+    opts = opts || {};
+    const raw = (transcript || '').trim().split(/\s+/).filter(Boolean);
+    if (!raw.length) return null;
+
+    if (opts.timedWords && opts.timedWords.length) {
+      const t0 = opts.timedWords[0].start;
+      const t1 = opts.timedWords[opts.timedWords.length - 1].end;
+      return this.fitWordsToSpan(raw, t0, t1);
+    }
+
+    if (opts.segments && opts.segments.length && opts.speechTotal > 0.2) {
+      /* Place words across speech segments by duration share. */
+      const segs = opts.segments;
+      const total = opts.speechTotal;
+      const counts = segs.map(s => Math.max(0, Math.round(((s.end - s.start) / total) * raw.length)));
+      let diff = raw.length - counts.reduce((a, b) => a + b, 0);
+      let i = 0;
+      while (diff !== 0 && segs.length) {
+        const idx = i % segs.length;
+        if (diff > 0) { counts[idx]++; diff--; }
+        else if (counts[idx] > 1) { counts[idx]--; diff++; }
+        i++;
+        if (i > raw.length * 4) break;
+      }
+      const out = [];
+      let cursor = 0;
+      segs.forEach((seg, si) => {
+        const slice = raw.slice(cursor, cursor + counts[si]);
+        cursor += counts[si];
+        if (!slice.length) return;
+        out.push.apply(out, this.fitWordsToSpan(slice, seg.start, seg.end));
+      });
+      if (cursor < raw.length && out.length) {
+        const rest = raw.slice(cursor);
+        const last = out[out.length - 1].end;
+        out.push.apply(out, this.fitWordsToSpan(rest, last, last + rest.length * 0.35));
+      }
+      return out.length ? out : null;
+    }
+
+    const dur = opts.duration || Math.max(2, raw.length * 0.42);
+    return this.fitWordsToSpan(raw, 0, dur);
   },
 
   fontStack(key) {

@@ -86,18 +86,21 @@ UQ.audioSync = {
     const segments = merged.filter(s => s.end - s.start > cfg.minSegment);
     const speechTotal = segments.reduce((n, s) => n + (s.end - s.start), 0);
 
+    /* Soft energy used to place words on louder syllables. */
+    const energy = { frameSec, frames: frames.map(v => Math.max(0, v - threshold * 0.35)) };
+
     if (!segments.length || speechTotal < .4) {
-      return { segments: null, speechTotal: 0, note: 'No speech found — try raising the voice sensitivity, or keep even spacing.' };
+      return { segments: null, speechTotal: 0, energy: null, note: 'No speech found — try raising the voice sensitivity, or keep even spacing.' };
     }
 
     step(92, 3);
-    await this.sleep(200);
+    await this.sleep(120);
     step(100, 4);
-    await this.sleep(600);
 
     return {
       segments,
       speechTotal,
+      energy,
       note: segments.length + ' speech segments detected · ' + speechTotal.toFixed(1) + 's of talking. Captions now follow the voice.'
     };
   }

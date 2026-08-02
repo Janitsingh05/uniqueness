@@ -14,7 +14,8 @@ UQ.editor = {
   state: {
     file: null, url: null, filename: '', duration: 0, time: 0, playing: false,
     transcript: '', draft: '', cutFiller: true, safe: true, tab: 'style',
-    segments: null, speechTotal: 0, vocalSync: true, sensitivity: 5,
+    segments: null, speechTotal: 0, energy: null, timedWords: null,
+    vocalSync: true, sensitivity: 5,
     note: '', live: '', analysing: false, rendering: false, renderPct: 0, renderDone: false,
     projectId: null, style: null, lines: []
   },
@@ -104,11 +105,21 @@ UQ.editor = {
     this.state.time = 0;
     this.state.segments = null;
     this.state.speechTotal = 0;
+    this.state.energy = null;
+    this.state.timedWords = null;
     this.state.renderDone = false;
     this.state.renderPct = 0;
+    this.state.transcript = '';
+    this.state.draft = '';
+    this.state.note = 'Clip loaded — building voice-matched captions…';
     this.video.src = this.state.url;
+    this.recompute();
     this.renderAll();
-    setTimeout(() => this.analyse(), 150);   // auto vocal sync on upload
+    this.setTab('text');
+
+    const auto = !(UQ.config.autoCaption && UQ.config.autoCaption.onUpload === false);
+    if (auto) setTimeout(() => this.captionize(), 120);
+    else setTimeout(() => this.analyse(), 150);
   },
 
   /* ---------- playback ---------- */
@@ -132,8 +143,93 @@ UQ.editor = {
       wordsPerLine: s.style.wpl,
       duration: s.duration,
       segments: s.vocalSync ? s.segments : null,
-      speechTotal: s.speechTotal
+      speechTotal: s.speechTotal,
+      energy: s.vocalSync ? s.energy : null,
+      timedWords: s.timedWords,
+      cutFiller: s.cutFiller
     });
+  },
+
+  /* Full client pipeline: upload → hear voice → write lyrics → lock timing. */
+  async captionize() {
+    const s = this.state;
+    if (!s.file) return;
+    if (s.analysing) return;
+    s.analysing = true;
+    s.timedWords = null;
+    this.setTab('text');
+
+    const steps = UQ.whisper.STEPS;
+    UQ.ui.progress.open(
+      'Building captions',
+      'Reading the clip and matching every word to the voice.',
+      steps
+    );
+
+    try {
+      /* 1) Voice regions + energy (fast, local) */
+      UQ.ui.progress.set(8, 0);
+      const voice = await UQ.audioSync.analyse(s.file, {
+        sensitivity: s.sensitivity,
+        onProgress: (pct) => UQ.ui.progress.set(Math.min(22, Math.round(pct * 0.22)), 0)
+      });
+      s.segments = voice.segments;
+      s.speechTotal = voice.speechTotal;
+      s.energy = voice.energy || null;
+      if (voice.segments) s.vocalSync = true;
+
+      /* 2) Whisper STT with word timestamps from the file itself */
+      const result = await UQ.whisper.transcribe(s.file, {
+        onProgress: (pct, step) => {
+          const mapped = 24 + Math.round((pct / 100) * 70);
+          UQ.ui.progress.set(mapped, Math.min(steps.length - 1, (step || 0) + 1));
+        }
+      });
+
+      if (result.text) {
+        s.transcript = result.text;
+        s.draft = result.text;
+        s.timedWords = result.timedWords && result.timedWords.length ? result.timedWords : null;
+        s.note = result.note;
+      } else {
+        s.note = result.note || voice.note;
+        s.timedWords = null;
+      }
+
+      UQ.ui.progress.set(100, steps.length - 1);
+      this.recompute();
+      this.renderAll();
+
+      const ta = UQ.ui.el('#transcript');
+      if (ta) {
+        ta.value = s.draft || s.transcript;
+        ta.focus();
+      }
+
+      if (s.transcript) {
+        UQ.ui.toast('Captions matched to voice — edit & Apply if needed');
+        /* Auto-play a short preview so the client sees the match */
+        this.seek(0);
+        if (this.video) {
+          this.video.play().catch(() => {});
+          s.playing = true;
+          this.renderTransport();
+        }
+      } else {
+        UQ.ui.toast('No speech found — paste lyrics and Apply');
+      }
+    } catch (err) {
+      console.warn(err);
+      s.note = (err && err.message) || 'Auto-caption failed. Paste your script and hit Apply to captions.';
+      this.renderSyncCard();
+      UQ.ui.toast('Could not auto-caption — paste script & Apply');
+      /* Still try voice timing so a pasted script locks later */
+      try { await this.analyse(); } catch (e) {}
+    } finally {
+      UQ.ui.progress.close();
+      s.analysing = false;
+      this.renderAll();
+    }
   },
 
   async analyse() {
@@ -141,7 +237,7 @@ UQ.editor = {
     if (!s.file) { s.note = 'Load a clip first — then this locks the caption timing to its voice.'; this.renderSyncCard(); return; }
     if (s.analysing) return;
     s.analysing = true;
-    UQ.ui.progress.open('Generating captions', 'Listening to the clip and locking every word to the voice.', UQ.audioSync.STEPS);
+    UQ.ui.progress.open('Syncing to voice', 'Detecting speech and locking caption timing.', UQ.audioSync.STEPS);
     const result = await UQ.audioSync.analyse(s.file, {
       sensitivity: s.sensitivity,
       onProgress: (pct, step) => UQ.ui.progress.set(pct, step)
@@ -150,7 +246,9 @@ UQ.editor = {
     s.analysing = false;
     s.segments = result.segments;
     s.speechTotal = result.speechTotal;
-    s.note = result.note;
+    s.energy = result.energy || null;
+    /* Manual / re-analyse: drop Whisper times so energy + segments rebuild timing */
+    if (!s.timedWords) s.note = result.note;
     if (result.segments) s.vocalSync = true;
     this.recompute();
     this.renderAll();
@@ -186,14 +284,92 @@ UQ.editor = {
           this.renderTextPanel();
           const ta = UQ.ui.el('#transcript');
           if (ta) { ta.focus(); ta.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-          UQ.ui.toast('Script ready — edit it, then Apply');
+          UQ.ui.toast('Script ready — captions follow your edits live');
           if (s.file) this.analyse();
         }
       }
     });
   },
 
-  /* Commit the edited draft into captions (and re-sync voice if possible). */
+  /* Live: script text drives captions immediately; voice re-fit shortly after. */
+  onScriptEdit() {
+    const s = this.state;
+    const ta = UQ.ui.el('#transcript');
+    const text = ta ? ta.value : (s.draft || '');
+    s.draft = text;
+    s.transcript = text;
+    s.timedWords = UQ.captions.retimefromScript(text, {
+      timedWords: s.timedWords,
+      segments: s.vocalSync ? s.segments : null,
+      speechTotal: s.speechTotal,
+      duration: s.duration
+    });
+    s.note = text.trim()
+      ? 'Captions adjusted to your script — timing follows the voice window.'
+      : 'Script cleared — paste lyrics or run Auto-caption.';
+    this.recompute();
+    this.renderTransport();
+    this.renderSyncCard();
+    this._paintScriptMeta();
+    this.paintFrame(true);
+
+    clearTimeout(this._scriptTimer);
+    this._scriptTimer = setTimeout(() => this.softResyncFromScript(), 850);
+  },
+
+  /* After typing pauses, rebuild word timing from voice energy + latest script. */
+  async softResyncFromScript() {
+    const s = this.state;
+    if (!s.file || s.analysing || !(s.draft || s.transcript).trim()) return;
+    if (!s.segments || !s.energy) {
+      try {
+        const voice = await UQ.audioSync.analyse(s.file, { sensitivity: s.sensitivity });
+        s.segments = voice.segments;
+        s.speechTotal = voice.speechTotal;
+        s.energy = voice.energy || null;
+        if (voice.segments) s.vocalSync = true;
+      } catch (e) { return; }
+    }
+    s.transcript = s.draft;
+    s.timedWords = UQ.captions.retimefromScript(s.transcript, {
+      segments: s.segments,
+      speechTotal: s.speechTotal,
+      duration: s.duration,
+      timedWords: null
+    });
+    /* Prefer energy-based lines when we have segments — clearer voice match after edits */
+    if (s.segments && s.speechTotal > 0.2) {
+      s.timedWords = null;
+    }
+    s.note = 'Captions auto-adjusted to your script and the voice.';
+    this.recompute();
+    this.renderTransport();
+    this.renderSyncCard();
+    this._paintScriptMeta();
+    this.paintFrame(true);
+  },
+
+  _paintScriptMeta() {
+    const s = this.state;
+    const dirtyEl = UQ.ui.el('#scriptDirty');
+    if (dirtyEl) dirtyEl.classList.add('hidden');
+    const stats = UQ.ui.el('#wordStats');
+    if (stats) {
+      stats.textContent =
+        UQ.captions.words(s.transcript, s.cutFiller).length + ' words · ' + s.lines.length + ' lines · ' + s.style.wpl + ' per line · live adjust on';
+    }
+    const list = UQ.ui.el('#lineList');
+    if (list) {
+      list.innerHTML = s.lines.map(l =>
+        '<button class="line-row" data-line="' + l.start.toFixed(3) + '"><time>' + UQ.ui.clock(l.start) + '</time><span>' + UQ.ui.esc(l.words.join(' ')) + '</span></button>'
+      ).join('');
+      UQ.ui.els('[data-line]', list).forEach(b => b.addEventListener('click', () => this.seek(parseFloat(b.dataset.line) + .01)));
+    }
+    const cut = UQ.ui.el('#cutCount');
+    if (cut) cut.textContent = s.cutFiller ? UQ.captions.fillerCount(s.transcript) : 0;
+  },
+
+  /* Commit / force full re-sync to voice from the current script. */
   async applyScript() {
     const s = this.state;
     const ta = UQ.ui.el('#transcript');
@@ -201,14 +377,33 @@ UQ.editor = {
     if (!text) return UQ.ui.toast('Script is empty — paste or transcribe first');
     s.draft = text;
     s.transcript = text;
+    clearTimeout(this._scriptTimer);
+
+    s.timedWords = UQ.captions.retimefromScript(text, {
+      timedWords: s.timedWords,
+      segments: s.vocalSync ? s.segments : null,
+      speechTotal: s.speechTotal,
+      duration: s.duration
+    });
     this.recompute();
     this.renderAll();
+
     if (s.file && s.vocalSync) {
-      s.note = 'Script applied — re-syncing to the voice…';
+      s.note = 'Re-matching your script to the voice…';
       this.renderSyncCard();
       await this.analyse();
+      s.timedWords = UQ.captions.retimefromScript(s.transcript, {
+        segments: s.segments,
+        speechTotal: s.speechTotal,
+        duration: s.duration
+      });
+      /* Use energy segment placement after analyse for best fit */
+      if (s.segments && s.speechTotal > 0.2) s.timedWords = null;
+      this.recompute();
+      this.renderAll();
+      UQ.ui.toast('Captions adjusted to your script');
     } else {
-      UQ.ui.toast('Captions updated from your edit');
+      UQ.ui.toast('Captions adjusted to your script');
     }
   },
 
@@ -217,7 +412,7 @@ UQ.editor = {
     s.draft = s.transcript;
     const ta = UQ.ui.el('#transcript');
     if (ta) ta.value = s.transcript;
-    this.renderTextPanel();
+    this.onScriptEdit();
     UQ.ui.toast('Edits discarded');
   },
 
@@ -298,19 +493,21 @@ UQ.editor = {
 
   renderSyncCard() {
     const s = this.state;
-    const synced = !!(s.vocalSync && s.segments);
+    const synced = !!(s.vocalSync && (s.timedWords || s.segments));
     UQ.ui.els('[data-sync-chip]').forEach(el => {
-      el.textContent = synced ? 'Voice-synced' : 'Even spacing';
-      el.className = 'badge ' + (synced ? 'badge--teal' : '') + ' ';
+      el.textContent = s.timedWords ? 'Exact voice match' : synced ? 'Voice-synced' : 'Even spacing';
+      el.className = 'badge ' + (synced || s.timedWords ? 'badge--teal' : '') + ' ';
       el.setAttribute('data-sync-chip', '');
     });
     UQ.ui.els('[data-sync-note]').forEach(el => {
-      el.textContent = s.note || (synced ? 'Timing is locked to the detected voice.' : 'Captions stay evenly spaced until the audio is analysed.');
+      el.textContent = s.note || (s.timedWords
+        ? 'Every word is locked to the spoken audio. Edit the script and Apply to re-match.'
+        : synced ? 'Timing is locked to the detected voice.' : 'Captions stay evenly spaced until the audio is analysed.');
     });
     UQ.ui.el('#vocalToggle').classList.toggle('is-on', s.vocalSync);
     UQ.ui.el('#sensValue').textContent = s.sensitivity <= 3 ? 'Low — only clear speech' : s.sensitivity >= 8 ? 'High — catches quiet talking' : 'Balanced';
     UQ.ui.el('#analyseBtn').textContent = s.analysing ? 'Analysing…' : s.segments ? 'Re-analyse audio' : 'Analyse audio & sync';
-    UQ.ui.el('#listenBtn').textContent = UQ.speech.listening() ? 'Stop listening' : 'Auto-transcribe clip';
+    UQ.ui.el('#listenBtn').textContent = s.analysing ? 'Working…' : 'Auto-caption from clip';
     const live = UQ.ui.el('#liveText');
     live.classList.toggle('hidden', !s.live);
     live.textContent = s.live;
@@ -395,10 +592,7 @@ UQ.editor = {
     if (!ta.dataset.bound) {
       ta.dataset.bound = '1';
       ta.value = s.draft || s.transcript;
-      ta.addEventListener('input', () => {
-        s.draft = ta.value;
-        this.renderTextPanel();
-      });
+      ta.addEventListener('input', () => this.onScriptEdit());
       UQ.ui.el('#applyScriptBtn').addEventListener('click', () => this.applyScript());
       UQ.ui.el('#resetScriptBtn').addEventListener('click', () => this.resetScript());
       UQ.ui.el('#fillerToggle').addEventListener('click', () => { s.cutFiller = !s.cutFiller; this.recompute(); this.renderAll(); });
@@ -415,29 +609,15 @@ UQ.editor = {
       sens.addEventListener('input', () => { s.sensitivity = parseInt(sens.value, 10); this.renderSyncCard(); });
       sens.addEventListener('change', () => { if (s.file) this.analyse(); });
       UQ.ui.el('#analyseBtn').addEventListener('click', () => this.analyse());
-      UQ.ui.el('#listenBtn').addEventListener('click', () => this.transcribe('clip'));
+      UQ.ui.el('#listenBtn').addEventListener('click', () => this.captionize());
       UQ.ui.el('#dictateBtn').addEventListener('click', () => this.transcribe('mic'));
     }
     if (document.activeElement !== ta) ta.value = s.draft || s.transcript;
 
-    const dirty = (s.draft || '') !== (s.transcript || '');
-    const dirtyEl = UQ.ui.el('#scriptDirty');
-    if (dirtyEl) dirtyEl.classList.toggle('hidden', !dirty);
-    const applyBtn = UQ.ui.el('#applyScriptBtn');
-    if (applyBtn) applyBtn.classList.toggle('btn--busy', false);
-
-    UQ.ui.el('#wordStats').textContent =
-      UQ.captions.words(s.transcript, s.cutFiller).length + ' words · ' + s.lines.length + ' lines · ' + s.style.wpl + ' per line' +
-      (dirty ? ' · edits pending' : '');
     UQ.ui.el('#fillerToggle').classList.toggle('is-on', s.cutFiller);
     UQ.ui.el('#fillerState').textContent = s.cutFiller ? 'on' : 'off';
-    UQ.ui.el('#cutCount').textContent = s.cutFiller ? UQ.captions.fillerCount(s.transcript) : 0;
     UQ.ui.el('#sensRange').value = s.sensitivity;
-
-    UQ.ui.el('#lineList').innerHTML = s.lines.map(l =>
-      '<button class="line-row" data-line="' + l.start.toFixed(3) + '"><time>' + UQ.ui.clock(l.start) + '</time><span>' + UQ.ui.esc(l.words.join(' ')) + '</span></button>'
-    ).join('');
-    UQ.ui.els('[data-line]').forEach(b => b.addEventListener('click', () => this.seek(parseFloat(b.dataset.line) + .01)));
+    this._paintScriptMeta();
   },
 
   renderExportPanel() {

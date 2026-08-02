@@ -30,20 +30,21 @@
 
       <div class="row-wrap spread" style="align-items:flex-end;margin-bottom:22px">
         <div>
-          <h1>Buy <span class="grad-text">minutes</span>, not a subscription</h1>
-          <p class="lead" style="max-width:520px;margin-top:10px">One minute of credit = one minute of video captioned. Every style and all subtitle files are free — credits only cover captioning and clean exports.</p>
+          <h1>Upgrade your <span class="grad-text">studio</span></h1>
+          <p class="lead" style="max-width:520px;margin-top:10px">Every caption style is free. Upgrade for more captioning time, clean 4K exports, and no watermark.</p>
         </div>
         <div class="segmented">
-          <button data-billing="packs" class="is-on">Packs</button>
-          <button data-billing="monthly">Monthly</button>
+          <button data-billing="monthly" class="is-on">Monthly</button>
+          <button data-billing="packs">Packs</button>
         </div>
       </div>
 
-      <div class="row-wrap" style="gap:22px;margin-bottom:24px;font-size:13px;color:var(--mut)">
-        <span class="row" style="gap:8px"><span style="color:var(--purple)">✦</span>Credits never expire</span>
+      <div class="row-wrap" style="gap:22px;margin-bottom:16px;font-size:13px;color:var(--mut)">
         <span class="row" style="gap:8px"><span style="color:var(--purple)">✦</span>Launch pricing, locked while you're early</span>
-        <span class="row" style="gap:8px"><span style="color:var(--purple)">✦</span>UPI, cards &amp; netbanking</span>
+        <span class="row" style="gap:8px"><span style="color:var(--purple)">✦</span>Word-perfect captions, synced to every word</span>
+        <span class="row" style="gap:8px"><span style="color:var(--purple)">✦</span>Switch or pause in two clicks</span>
       </div>
+      <p id="gatewayNote" style="font-size:12.5px;color:var(--faint);margin-bottom:24px;line-height:1.55;max-width:640px"></p>
 
       <div class="grid grid--plans" id="plans" style="margin-bottom:32px"></div>
 
@@ -59,11 +60,11 @@
         </article>
         <article class="card card--pad">
           <h3 style="font-size:13.5px;margin-bottom:9px">Watermark</h3>
-          <p style="font-size:13px;color:var(--mut);line-height:1.6">Free exports carry a small corner mark. Any paid credit pack removes it on every export, at up to 4K.</p>
+          <p style="font-size:13px;color:var(--mut);line-height:1.6">Free exports carry a small corner mark. Any paid plan removes it on every export, at up to 4K.</p>
         </article>
         <article class="card card--pad">
-          <h3 style="font-size:13.5px;margin-bottom:9px">Refunds</h3>
-          <p style="font-size:13px;color:var(--mut);line-height:1.6">Unused credits are refundable for 7 days. Something rendered wrong? We re-credit the minutes, no questions.</p>
+          <h3 style="font-size:13.5px;margin-bottom:9px">Payment gateway</h3>
+          <p style="font-size:13px;color:var(--mut);line-height:1.6">Razorpay hook is ready in <span class="mono">js/config.js</span> → <span class="mono">payments</span>. Paste your key, set <span class="mono">enabled: true</span>, finish <span class="mono">UQ.payments.checkout</span>.</p>
         </article>
       </div>
     </main>
@@ -78,6 +79,7 @@
 <script src="js/db.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/shell.js"></script>
+<script src="js/payments.js"></script>
 <script src="js/credits.js"></script>
 </body>
 </html>

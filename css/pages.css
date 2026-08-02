@@ -55,6 +55,46 @@
 .cta-band h2 { font-size: clamp(24px, 3.4vw, 34px); letter-spacing: -.035em; margin-bottom: 10px; }
 .site-foot { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; padding-top: 26px; font-size: 12px; font-weight: 600; color: var(--faint); }
 
+.land-section { padding: clamp(48px, 6vw, 80px) 28px; }
+.land-section--tint { background: #FAFAFE; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.land-section__inner { max-width: var(--page-max); margin: 0 auto; }
+.land-section__inner--narrow { max-width: 720px; }
+.land-section h2 { font-size: clamp(26px, 3.8vw, 40px); letter-spacing: -.035em; margin-bottom: 14px; }
+.land-lead { font-size: 15px; color: var(--mut); line-height: 1.65; max-width: 640px; margin-bottom: 14px; }
+
+.land-steps { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.land-step { padding: 22px; border: 1px solid var(--hair); border-radius: var(--r-lg); background: var(--card); box-shadow: var(--shadow-card); }
+.land-step__num { display: block; font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--purple); letter-spacing: .08em; margin-bottom: 12px; }
+.land-step h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.land-step p { font-size: 13px; color: var(--mut); line-height: 1.55; margin: 0; }
+
+.land-style { display: block; border: 1px solid var(--hair); border-radius: 20px; overflow: hidden; background: var(--card); text-decoration: none; color: inherit; box-shadow: var(--shadow-card); transition: border-color .15s; }
+.land-style:hover { border-color: #C9B8FF; }
+.land-style__name { display: block; padding: 12px 14px 2px; font-size: 14px; font-weight: 700; }
+.land-style__kind { display: block; padding: 0 14px 14px; font-size: 11.5px; color: var(--mut); }
+
+.land-stats { gap: 14px; }
+.land-stat { padding: 22px; border: 1px solid var(--hair); border-radius: var(--r-lg); background: var(--card); }
+.land-stat b { display: block; font-size: 36px; font-weight: 800; letter-spacing: -.04em; color: var(--purple-deep); margin-bottom: 8px; }
+.land-stat span { font-size: 13px; color: var(--mut); line-height: 1.45; }
+
+.faq-item { border-bottom: 1px solid var(--rule); }
+.faq-item__q { display: flex; justify-content: space-between; align-items: center; gap: 16px; width: 100%; padding: 18px 0; font-size: 14.5px; font-weight: 700; text-align: left; color: var(--ink); }
+.faq-item__q:hover { color: var(--purple-deep); }
+.faq-item__icon { font-size: 18px; color: var(--faint); flex-shrink: 0; }
+.faq-item__a { font-size: 13.5px; color: var(--mut); line-height: 1.65; padding-bottom: 18px; }
+
+.land-foot { align-items: flex-start; padding-top: 36px; margin-top: 36px; border-top: 1px solid var(--rule); }
+.land-foot__links { display: flex; gap: 48px; flex-wrap: wrap; }
+.land-foot__links b { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin-bottom: 10px; }
+.land-foot__links a { display: block; font-size: 13px; font-weight: 600; color: var(--body); padding: 4px 0; }
+.land-foot__links a:hover { color: var(--purple-deep); }
+
+@media (max-width: 720px) {
+  .site-nav__link { display: none; }
+  .site-nav__link:nth-last-child(2) { display: inline; }
+}
+
 /* ---------------- Auth (login.html) ---------------- */
 .auth { min-height: 100vh; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); background: var(--card); }
 .auth__aside { padding: clamp(28px, 5vw, 54px); display: flex; flex-direction: column; justify-content: space-between; background: linear-gradient(160deg, #F9F6FF, #EEF6FA); min-height: 340px; }

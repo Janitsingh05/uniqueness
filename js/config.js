@@ -11,11 +11,20 @@ UQ.config = {
     name: 'uniqueness',
     domain: 'uniqueness.online',
     logo: 'assets/images/uniqueness-logo.png',
-    tagline: "Captions that look like nobody else's"
+    tagline: 'Captions that earn the scroll',
+    pitch: 'Upload a clip. uniqueness times every word to your voice and animates it so people keep watching — short-form that looks directed, not subtitled.'
   },
 
   /* New accounts start with this much credit (in minutes). */
   freeMinutes: 3,
+
+  /* Razorpay (or other) — leave enabled:false until you paste a key.
+     Space reserved so the gateway drops in later without rewriting credits.js. */
+  payments: {
+    provider: 'razorpay',
+    keyId: '',
+    enabled: false
+  },
 
   /* Caption templates. `mode` drives the timing engine:
      word = one word on screen, line = whole line, type = typewriter. */
@@ -83,34 +92,42 @@ UQ.config = {
   fillerWords: /^(um|uh|uhh|hmm|like|basically|actually)[,.!?]?$/i,
 
   /* Credit packs (one-time) and monthly plans.
-     `add` = minutes granted, `tier` = stored on the user record. */
+     `add` = minutes granted (−1 / unlimited:true = no cap). */
   packs: [
     { name: 'Free', tier: 'Free', add: 0, price: '₹0', unit: '', rate: 'No card needed', minutes: '3 minutes of captioning', free: true,
-      blurb: 'Enough to caption your first few clips.',
-      features: ['All 11 kinetic styles', 'Word-level timing', 'SRT, VTT & TXT exports', '720p export with corner mark'] },
-    { name: 'Starter pack', tier: 'Starter', add: 60, price: '₹299', unit: 'one-time', rate: '₹5 per minute', minutes: '60 minutes of credit',
-      blurb: 'A month of posting, roughly.',
-      features: ['Watermark-free exports', '1080p export', 'Filler-word auto-cut', 'Credits never expire'] },
-    { name: 'Creator pack', tier: 'Creator', add: 300, price: '₹1,199', unit: 'one-time', rate: '₹4 per minute — save 20%', minutes: '300 minutes of credit', hot: true, badge: 'BEST VALUE',
-      blurb: 'For creators posting most days.',
-      features: ['Everything in Starter', '4K export', 'Saved brand style presets', 'Priority render queue'] },
-    { name: 'Studio pack', tier: 'Studio', add: 1000, price: '₹2,999', unit: 'one-time', rate: '₹3 per minute — save 40%', minutes: '1,000 minutes of credit',
-      blurb: 'Agencies and multi-client work.',
-      features: ['Everything in Creator', 'Team seats & shared presets', 'Early access to new styles', 'Email support in 24h'] }
+      blurb: 'Caption your first clips, free.',
+      features: ['Word-perfect captions, synced to every word', 'Every kinetic style unlocked', 'Ready-to-post 720p exports', 'SRT, VTT & TXT included'] },
+    { name: 'Starter pack', tier: 'Starter', add: 120, price: '₹299', unit: 'one-time', rate: '2 hours · one-time', minutes: '120 minutes of credit',
+      blurb: 'For getting started without a watermark.',
+      features: ['Watermark-free 1080p exports', 'Auto-cut filler words', 'Credits never expire', '4K exports for premium clips'] },
+    { name: 'Creator pack', tier: 'Creator', add: 900, price: '₹1,199', unit: 'one-time', rate: '15 hours · best value pack', minutes: '900 minutes of credit', hot: true, badge: 'BEST VALUE',
+      blurb: 'For creators who post every week.',
+      features: ['Everything in Starter', 'Crisp 4K, zero watermark', 'Hours of captions, not minutes', 'Priority render queue'] },
+    { name: 'Studio pack', tier: 'Studio', add: 99999, unlimited: true, price: '₹2,999', unit: 'one-time', rate: 'Unlimited captioning', minutes: 'Unlimited captions',
+      blurb: 'For power creators who publish all day.',
+      features: ['Everything in Creator', 'Unlimited captions', 'Early access to new styles', 'Export-ready SRT · VTT · MP4'] }
   ],
   monthly: [
     { name: 'Free', tier: 'Free', add: 0, price: '₹0', unit: '/mo', rate: 'No card needed', minutes: '3 minutes every month', free: true,
-      blurb: 'Resets every month, forever.',
-      features: ['All 11 kinetic styles', 'Word-level timing', 'SRT, VTT & TXT exports', '720p export with corner mark'] },
-    { name: 'Lite monthly', tier: 'Lite', add: 30, price: '₹199', unit: '/mo', rate: '30 min/month · ₹6.6 per min', minutes: '30 minutes every month',
-      blurb: 'One clip a day, comfortably.',
-      features: ['Watermark-free exports', '1080p export', 'Filler-word auto-cut', 'Cancel any time'] },
-    { name: 'Creator monthly', tier: 'Creator', add: 150, price: '₹599', unit: '/mo', rate: '150 min/month · ₹4 per min', minutes: '150 minutes every month', hot: true, badge: 'MOST POPULAR',
-      blurb: 'Daily posting with room to spare.',
-      features: ['Everything in Lite', '4K export', 'Saved brand style presets', 'Rollover up to 60 min'] },
-    { name: 'Studio monthly', tier: 'Studio', add: 500, price: '₹1,499', unit: '/mo', rate: '500 min/month · ₹3 per min', minutes: '500 minutes every month',
-      blurb: 'Client volume, every week.',
-      features: ['Everything in Creator', 'Team seats & shared presets', 'Early access to new styles', 'Email support in 24h'] }
+      blurb: 'Caption your first clips, free.',
+      features: ['Word-perfect captions, synced to every word', 'Every kinetic style unlocked', 'Ready-to-post 720p exports', 'Exports carry a watermark on Free'] },
+    { name: 'Starter', tier: 'Starter', add: 120, price: '₹299', unit: '/mo', rate: 'just ₹10/day', minutes: '2 hours of captions, every month',
+      blurb: 'For getting started without a watermark.',
+      features: ['Everything in Free', '2 hours of captions a month', 'Watermark-free 1080p exports', 'Auto-cut filler words', 'Crisp 4K exports'] },
+    { name: 'Creator', tier: 'Creator', add: 900, price: '₹499', unit: '/mo', rate: 'just ₹17/day · was ₹799', minutes: '15 hours of captions a month', hot: true, badge: 'MOST POPULAR',
+      blurb: 'For creators who post every week.',
+      features: ['Everything in Starter', 'Caption hours of video, not minutes', 'Crisp 4K exports, zero watermark', 'Auto-cut filler for tighter clips'] },
+    { name: 'Studio', tier: 'Studio', add: 99999, unlimited: true, price: '₹1,299', unit: '/mo', rate: 'just ₹43/day · was ₹1,999', minutes: 'Unlimited captions — never watch a counter',
+      blurb: 'For power creators who publish all day.',
+      features: ['Everything in Creator', 'Unlimited captions, month after month', 'Sharpest 4K, zero watermark', 'Early access to new styles', 'Export-ready video, SRT & TXT'] }
+  ],
+
+  faq: [
+    { q: 'Does it work with Hinglish and accents?', a: 'Yes — uniqueness handles English, Hindi, and natural Hinglish. Fast talkers and strong accents are fine; you can always edit the script and captions re-match the voice.' },
+    { q: 'How do captions lock to my voice?', a: 'On upload we transcribe the clip on-device and lock every word to the moment it is spoken, then group lines by natural rhythm. Edit the script anytime — timing adjusts with it.' },
+    { q: 'Which aspect ratios can I export?', a: '9:16 for Reels and Shorts, 1:1 for feed posts, and 16:9 for YouTube — plus clean SRT, VTT, and TXT.' },
+    { q: 'How does billing work?', a: 'Every caption style is free. You only pay for captioning minutes and clean exports. Payment gateway hooks are ready — connect Razorpay when you go live. Until then checkout runs in demo mode.' },
+    { q: 'Is my clip uploaded to a server?', a: 'Transcription and voice sync run in your browser. Clips stay on your device unless you later connect a cloud render worker.' }
   ],
 
   /* Referral economics. */
@@ -144,10 +161,6 @@ UQ.config = {
      Uses Google Chrome / Edge Web Speech API (free, no key).
      That API is powered by Google's speech recogniser in-browser. */
   speechLangs: { 'Auto-detect': 'en-IN', English: 'en-IN', Hindi: 'hi-IN', Hinglish: 'hi-IN' },
-
-  /* Optional later: Razorpay keys for real UPI/card checkout.
-     Leave blank = demo checkout (credits still add, no real charge). */
-  razorpay: { keyId: '', enabled: false },
 
   /* Sidebar navigation — add a page here and it appears everywhere. */
   nav: [

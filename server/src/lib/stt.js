@@ -40,9 +40,25 @@ async function callOpenAI(filePath, { language, prompt } = {}) {
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     let detail = body.slice(0, 300);
-    try { detail = JSON.parse(body).error?.message || detail; } catch (e) {}
-    if (res.status === 401) throw new Error('Speech-to-text rejected the API key. Check OPENAI_API_KEY.');
-    if (res.status === 429) throw new Error('Speech-to-text rate limit or quota reached. Check your OpenAI billing.');
+    let code = '';
+    try {
+      const parsed = JSON.parse(body).error || {};
+      detail = parsed.message || detail;
+      code = parsed.code || parsed.type || '';
+    } catch (e) {}
+
+    if (res.status === 401) throw new Error('Speech-to-text rejected the API key. Check OPENAI_API_KEY in server/.env.');
+
+    /* 429 covers two very different problems. Out of credit is a billing
+       fix and will not pass on retry; a true rate limit will. OpenAI's own
+       message names the exact page to visit, so pass it through rather than
+       replacing it with something vaguer. */
+    if (res.status === 429) {
+      const noCredit = /insufficient_quota|credit_balance_exhausted/i.test(code) || /no credits|billing/i.test(detail);
+      throw new Error(noCredit
+        ? `No OpenAI credit: ${detail}`
+        : `Speech-to-text is rate limited, try again shortly: ${detail}`);
+    }
     throw new Error(`Speech-to-text failed (${res.status}): ${detail}`);
   }
   return res.json();

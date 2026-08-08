@@ -11,12 +11,15 @@ window.UQ = window.UQ || {};
 UQ.editor = {
   DEMO: 'Most people scroll past the first two seconds. So I put the hook in the first three words and let the captions carry the rest. Watch how the words land on the beat.',
 
+  /* Bumped on every new clip so a slower, older caption run can tell it lost. */
+  _run: 0,
+
   state: {
     file: null, url: null, filename: '', duration: 0, time: 0, playing: false,
     transcript: '', draft: '', cutFiller: true, safe: true, tab: 'style',
     segments: null, speechTotal: 0, energy: null, timedWords: null,
     vocalSync: true, sensitivity: 5,
-    note: '', live: '', analysing: false, rendering: false, renderPct: 0, renderDone: false,
+    note: '', live: '', failure: '', analysing: false, rendering: false, renderPct: 0, renderDone: false,
     projectId: null, style: null, lines: []
   },
 
@@ -65,12 +68,46 @@ UQ.editor = {
         this.state.style.ratio = p.ratio;
       }
     }
-    if (params.get('pick')) setTimeout(() => this.input.click(), 200);
+    this.applyTemplateRhythm(this.state.style.tpl);
+    this.claimUpload(!!params.get('pick'));
+  },
+
+  /* A clip dropped on the dashboard is parked in IndexedDB — collect it and
+     caption it immediately. Otherwise fall back to asking for a file. */
+  async claimUpload(wantPick) {
+    let file = null;
+    try { file = await UQ.handoff.take(); } catch (e) { file = null; }
+    if (file) { this.loadFile(file); return; }
+    if (wantPick) this.promptForFile();
+  },
+
+  /* Chrome only opens a file dialog while a user gesture is still active, so
+     after a navigation the call is silently ignored. Point at the button
+     instead of leaving the editor looking broken. */
+  promptForFile() {
+    const act = navigator.userActivation;
+    if (!act || act.isActive) {
+      try { this.input.click(); return; } catch (e) {}
+    }
+    const btn = UQ.ui.el('#pickFile');
+    if (btn) { btn.classList.add('is-waiting'); btn.focus({ preventScroll: true }); }
+    this.state.note = 'Choose your clip to start — captions build themselves from the voice.';
+    this.renderSyncCard();
+    UQ.ui.toast('Choose a clip to caption');
+  },
+
+  /* Words per line follows the chosen style: one-word punch-ins group by one,
+     a subtitle plate holds a full line. */
+  applyTemplateRhythm(tplId) {
+    const tpl = UQ.config.templates.find(t => t.id === tplId);
+    if (!tpl || !tpl.wpl) return;
+    this.state.style.wpl = tpl.wpl;
   },
 
   bindStatic() {
     this.input.addEventListener('change', e => this.loadFile(e.target.files && e.target.files[0]));
     UQ.ui.el('#pickFile').addEventListener('click', () => this.input.click());
+    UQ.ui.el('#diagBtn').addEventListener('click', () => UQ.diag.open(this.state.file));
     UQ.ui.el('#saveProject').addEventListener('click', () => this.saveProject());
     UQ.ui.el('#playBtn').addEventListener('click', () => this.togglePlay());
     UQ.ui.el('#safeBtn').addEventListener('click', () => { this.state.safe = !this.state.safe; this.renderStage(); });
@@ -97,7 +134,14 @@ UQ.editor = {
 
   /* ---------- file ---------- */
   loadFile(file) {
-    if (!file || !/^(video|audio)\//.test(file.type)) return;
+    if (!file) return;
+    if (!UQ.handoff.isMedia(file)) {
+      UQ.ui.toast('That file is not a video or audio clip — try MP4, MOV, WEBM, M4A or WAV');
+      return;
+    }
+    const btn = UQ.ui.el('#pickFile');
+    if (btn) btn.classList.remove('is-waiting');
+    this.showFailure(null);
     if (this.state.url) URL.revokeObjectURL(this.state.url);
     this.state.file = file;
     this.state.url = URL.createObjectURL(file);
@@ -150,14 +194,21 @@ UQ.editor = {
     });
   },
 
-  /* Full client pipeline: upload → hear voice → write lyrics → lock timing. */
+  /* Full client pipeline: upload → hear voice → write lyrics → lock timing.
+     A newer clip supersedes one still in flight — the older run's results are
+     dropped rather than pasted onto the wrong video. */
   async captionize() {
     const s = this.state;
     if (!s.file) return;
-    if (s.analysing) return;
+    const run = ++this._run;
+    const stale = () => this._run !== run;
+    const file = s.file;
     s.analysing = true;
     s.timedWords = null;
     this.setTab('text');
+
+    this.showFailure(null);
+    UQ.diag.note(null);
 
     const steps = UQ.whisper.STEPS;
     UQ.ui.progress.open(
@@ -166,25 +217,39 @@ UQ.editor = {
       steps
     );
 
+    /* If nothing moves for a while the model download is almost certainly
+       blocked or crawling — say so instead of spinning forever. */
+    let beat = Date.now();
+    const watchdog = setInterval(() => {
+      if (stale() || Date.now() - beat < 45000) return;
+      beat = Date.now();
+      s.note = 'Still downloading the speech model — this is a one-time ~40MB download. If it never finishes, your network or an extension is blocking cdn.jsdelivr.net or huggingface.co.';
+      this.renderSyncCard();
+    }, 5000);
+
     try {
       /* 1) Voice regions + energy (fast, local) */
       UQ.ui.progress.set(8, 0);
-      const voice = await UQ.audioSync.analyse(s.file, {
+      const voice = await UQ.audioSync.analyse(file, {
         sensitivity: s.sensitivity,
-        onProgress: (pct) => UQ.ui.progress.set(Math.min(22, Math.round(pct * 0.22)), 0)
+        onProgress: (pct) => { if (!stale()) UQ.ui.progress.set(Math.min(22, Math.round(pct * 0.22)), 0); }
       });
+      if (stale()) return;
       s.segments = voice.segments;
       s.speechTotal = voice.speechTotal;
       s.energy = voice.energy || null;
       if (voice.segments) s.vocalSync = true;
 
       /* 2) Whisper STT with word timestamps from the file itself */
-      const result = await UQ.whisper.transcribe(s.file, {
+      const result = await UQ.whisper.transcribe(file, {
         onProgress: (pct, step) => {
+          if (stale()) return;
+          beat = Date.now();
           const mapped = 24 + Math.round((pct / 100) * 70);
           UQ.ui.progress.set(mapped, Math.min(steps.length - 1, (step || 0) + 1));
         }
       });
+      if (stale()) return;
 
       if (result.text) {
         s.transcript = result.text;
@@ -216,20 +281,39 @@ UQ.editor = {
           this.renderTransport();
         }
       } else {
+        this.showFailure(s.note || 'No speech was heard in this clip.');
         UQ.ui.toast('No speech found — paste lyrics and Apply');
       }
     } catch (err) {
+      if (stale()) return;
       console.warn(err);
+      UQ.diag.note(err);
       s.note = (err && err.message) || 'Auto-caption failed. Paste your script and hit Apply to captions.';
+      this.showFailure(s.note);
       this.renderSyncCard();
       UQ.ui.toast('Could not auto-caption — paste script & Apply');
       /* Still try voice timing so a pasted script locks later */
+      s.analysing = false;
       try { await this.analyse(); } catch (e) {}
     } finally {
-      UQ.ui.progress.close();
-      s.analysing = false;
-      this.renderAll();
+      clearInterval(watchdog);
+      /* A newer clip owns the modal and the state — leave both alone. */
+      if (!stale()) {
+        UQ.ui.progress.close();
+        s.analysing = false;
+        this.renderAll();
+      }
     }
+  },
+
+  /* One loud, persistent place that says why there are no captions.
+     Pass null to clear it. */
+  showFailure(why) {
+    const box = UQ.ui.el('#captionAlert');
+    if (!box) return;
+    this.state.failure = why || '';
+    box.classList.toggle('hidden', !why);
+    if (why) UQ.ui.el('#captionAlertWhy').textContent = why;
   },
 
   async analyse() {
@@ -518,7 +602,17 @@ UQ.editor = {
     const sel = UQ.ui.el('#tplSelect');
     if (!sel.options.length) {
       sel.innerHTML = UQ.config.templates.map(t => '<option value="' + t.id + '">' + t.name + ' — ' + t.kind + '</option>').join('');
-      sel.addEventListener('change', () => { st.tpl = sel.value; this.renderHeader(); this.renderStage(); this.paintFrame(true); });
+      sel.addEventListener('change', () => {
+        st.tpl = sel.value;
+        this.applyTemplateRhythm(st.tpl);   // regroup the captions for this style
+        this.recompute();
+        this.renderHeader();
+        this.renderStage();
+        this.renderStylePanel();
+        this.renderTransport();
+        this.renderTextPanel();
+        this.paintFrame(true);
+      });
 
       const fonts = UQ.ui.el('#fontPicker');
       fonts.innerHTML = (UQ.config.captionFonts || []).map(f =>
@@ -611,6 +705,7 @@ UQ.editor = {
       UQ.ui.el('#analyseBtn').addEventListener('click', () => this.analyse());
       UQ.ui.el('#listenBtn').addEventListener('click', () => this.captionize());
       UQ.ui.el('#dictateBtn').addEventListener('click', () => this.transcribe('mic'));
+      UQ.ui.el('#diagBtn2').addEventListener('click', () => UQ.diag.open(s.file));
     }
     if (document.activeElement !== ta) ta.value = s.draft || s.transcript;
 

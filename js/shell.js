@@ -78,7 +78,11 @@ UQ.shell = {
       location.href = 'index.html';
     });
     host.querySelector('[data-upload]').addEventListener('click', () => {
-      // The editor owns the file picker; dashboard has its own dropzone.
+      /* Open the picker right here when this page owns one — the click is a
+         real user gesture, and Chrome refuses to open a file dialog without
+         one. Only pages with no picker of their own navigate to the editor. */
+      const input = document.getElementById('fileInput');
+      if (input) { input.click(); return; }
       location.href = 'editor.html?pick=1';
     });
   },

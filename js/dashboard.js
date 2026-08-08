@@ -33,9 +33,17 @@ UQ.dashboard = {
     this.renderTiles();
   },
 
-  /* A File object cannot survive a page navigation, so the editor
-     owns the picker — we just send the user there with it open. */
-  handoff() { location.href = 'editor.html?pick=1'; },
+  /* Park the clip in IndexedDB and open the editor, which picks it up
+     and starts captioning straight away. Nothing is re-picked. */
+  async handoff(file) {
+    if (!UQ.handoff.isMedia(file)) {
+      UQ.ui.toast('That file is not a video or audio clip — try MP4, MOV, WEBM, M4A or WAV');
+      return;
+    }
+    UQ.ui.toast('Opening the editor — captions start automatically');
+    const parked = await UQ.handoff.put(file);
+    location.href = parked ? 'editor.html?from=upload' : 'editor.html?pick=1';
+  },
 
   renderStats() {
     const u = this.user, projects = UQ.db.projects(u.id);

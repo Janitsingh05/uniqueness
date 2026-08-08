@@ -27,19 +27,21 @@ UQ.config = {
   },
 
   /* Caption templates. `mode` drives the timing engine:
-     word = one word on screen, line = whole line, type = typewriter. */
+     word = one word on screen, line = whole line, type = typewriter.
+     `wpl` is the words-per-line the style is built for — picking a template
+     regroups the generated captions to it. The slider still overrides. */
   templates: [
-    { id: 'punch',     name: 'Punch',     kind: 'One word',   mode: 'word', desc: 'One giant word, hard scale-in.',            tag: 'POPULAR' },
-    { id: 'karaoke',   name: 'Karaoke',   kind: 'Highlight',  mode: 'line', desc: 'Line holds, the spoken word lights up.',    tag: 'POPULAR' },
-    { id: 'chip',      name: 'Chip',      kind: 'Boxed',      mode: 'line', desc: 'Solid block behind the active word.' },
-    { id: 'neon',      name: 'Neon',      kind: 'Glow',       mode: 'word', desc: 'Soft glow, night-shoot energy.' },
-    { id: 'build',     name: 'Build',     kind: 'Build-up',   mode: 'line', desc: "The line assembles as it's spoken." },
-    { id: 'type',      name: 'Type',      kind: 'Typewriter', mode: 'type', desc: 'Characters type out behind a caret.' },
-    { id: 'bounce',    name: 'Bounce',    kind: 'Pop',        mode: 'word', desc: 'Springy pop — the short-form default.',     tag: 'NEW' },
-    { id: 'meme',      name: 'Meme',      kind: 'Outline',    mode: 'line', desc: 'Fat outline, hard offset shadow.' },
-    { id: 'sweep',     name: 'Sweep',     kind: 'Gradient',   mode: 'line', desc: 'Colour travels across the line.' },
-    { id: 'bar',       name: 'Bar',       kind: 'Subtitle',   mode: 'line', desc: 'Classic bottom subtitle plate.' },
-    { id: 'editorial', name: 'Editorial', kind: 'Serif',      mode: 'line', desc: 'Calm serif for voice-over and brand work.' }
+    { id: 'punch',     name: 'Punch',     kind: 'One word',   mode: 'word', wpl: 1, desc: 'One giant word, hard scale-in.',            tag: 'POPULAR' },
+    { id: 'karaoke',   name: 'Karaoke',   kind: 'Highlight',  mode: 'line', wpl: 4, desc: 'Line holds, the spoken word lights up.',    tag: 'POPULAR' },
+    { id: 'chip',      name: 'Chip',      kind: 'Boxed',      mode: 'line', wpl: 3, desc: 'Solid block behind the active word.' },
+    { id: 'neon',      name: 'Neon',      kind: 'Glow',       mode: 'word', wpl: 1, desc: 'Soft glow, night-shoot energy.' },
+    { id: 'build',     name: 'Build',     kind: 'Build-up',   mode: 'line', wpl: 4, desc: "The line assembles as it's spoken." },
+    { id: 'type',      name: 'Type',      kind: 'Typewriter', mode: 'type', wpl: 5, desc: 'Characters type out behind a caret.' },
+    { id: 'bounce',    name: 'Bounce',    kind: 'Pop',        mode: 'word', wpl: 1, desc: 'Springy pop — the short-form default.',     tag: 'NEW' },
+    { id: 'meme',      name: 'Meme',      kind: 'Outline',    mode: 'line', wpl: 4, desc: 'Fat outline, hard offset shadow.' },
+    { id: 'sweep',     name: 'Sweep',     kind: 'Gradient',   mode: 'line', wpl: 4, desc: 'Colour travels across the line.' },
+    { id: 'bar',       name: 'Bar',       kind: 'Subtitle',   mode: 'line', wpl: 6, desc: 'Classic bottom subtitle plate.' },
+    { id: 'editorial', name: 'Editorial', kind: 'Serif',      mode: 'line', wpl: 5, desc: 'Calm serif for voice-over and brand work.' }
   ],
 
   /* Default caption look for a new project. */

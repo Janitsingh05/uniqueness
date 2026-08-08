@@ -156,3 +156,12 @@
   transition: opacity .2s, transform .2s; z-index: 90;
 }
 .toast.is-on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Shown when the browser refused to auto-open the file picker — the user
+   has to click once, so make the button impossible to miss. */
+@keyframes wait-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 255, .55); }
+  50%      { box-shadow: 0 0 0 9px rgba(139, 92, 255, 0); }
+}
+.is-waiting { animation: wait-pulse 1.5s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) { .is-waiting { animation: none; outline: 2px solid var(--purple); outline-offset: 2px; } }

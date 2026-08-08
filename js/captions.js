@@ -169,6 +169,7 @@ UQ.captions = {
     let line = lines.find(l => l.start <= t && t < l.end), gap = false;
     if (!line) {
       gap = true;
+      if (t < lines[0].start) return null;
       let prev = null;
       for (const l of lines) { if (l.end <= t) prev = l; else break; }
       line = prev || lines[0];

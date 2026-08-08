@@ -76,6 +76,7 @@ site/
     ├── config.js         ⭐ brand strings, templates, pricing, defaults, nav
     ├── db.js             ⭐ data layer (localStorage today, your API later)
     ├── ui.js             DOM helpers, formatting, progress modal, toasts
+    ├── handoff.js        carries an uploaded clip from dashboard → editor
     ├── shell.js          renders sidebar + topbar, guards signed-out users
     ├── auth.js           login.html controller
     ├── captions.js       timing engine: words → lines → active word
@@ -104,6 +105,7 @@ Load order on every app page: `config → db → ui → shell → (feature files
 | Prices, minutes per pack, plan names | `js/config.js` → `packs`, `monthly` |
 | Free minutes for new accounts | `js/config.js` → `freeMinutes` |
 | Caption style list, names, descriptions | `js/config.js` → `templates` |
+| Words per line a style groups by | `js/config.js` → `templates` → `wpl` |
 | How a caption style *looks* | `css/captions.css` → `.tpl-<id>` |
 | Sidebar menu items | `js/config.js` → `nav` |
 | Default caption look for new clips | `js/config.js` → `defaultStyle` |
@@ -113,7 +115,7 @@ Load order on every app page: `config → db → ui → shell → (feature files
 
 ### Adding a 12th caption style
 
-1. Add an entry to `templates` in `js/config.js` (`id`, `name`, `kind`, `mode`, `desc`).
+1. Add an entry to `templates` in `js/config.js` (`id`, `name`, `kind`, `mode`, `wpl`, `desc`).
 2. Add `.tpl-<id> .w { … }` rules in `css/captions.css`.
 3. Add a preview snippet in `js/preview-tiles.js` → `markup`.
 

@@ -78,6 +78,15 @@
           <div class="word-chips" id="wordChips"></div>
         </div>
 
+        <div class="alert alert--error hidden" id="captionAlert" style="display:flex;gap:12px;align-items:flex-start">
+          <span style="flex-shrink:0;font-size:15px">⚠</span>
+          <span class="grow">
+            <b style="display:block;margin-bottom:3px">Captions could not be generated</b>
+            <span id="captionAlertWhy" style="font-weight:500"></span>
+          </span>
+          <button class="btn btn--quiet btn--sm" id="diagBtn" style="flex-shrink:0">Why?</button>
+        </div>
+
         <div class="row-wrap card" style="padding:14px 16px;border-color:#E7E3F8;background:#F9F6FF">
           <span class="badge" data-sync-chip>Even spacing</span>
           <span class="grow" style="font-size:12.5px;color:var(--mut);line-height:1.5" data-sync-note></span>
@@ -177,7 +186,10 @@
               <button class="btn btn--primary" id="listenBtn" style="flex:1;min-width:148px">Auto-caption from clip</button>
               <button class="btn btn--ghost" id="analyseBtn" style="flex:1;min-width:148px">Re-sync timing</button>
             </div>
-            <button class="btn btn--quiet btn--block" id="dictateBtn">Dictate with mic instead</button>
+            <div class="row-wrap" style="gap:8px">
+              <button class="btn btn--quiet" id="dictateBtn" style="flex:1;min-width:148px">Dictate with mic instead</button>
+              <button class="btn btn--quiet" id="diagBtn2" style="flex:1;min-width:148px">Run diagnostics</button>
+            </div>
 
             <div style="font-size:12px;color:var(--mut);margin-top:11px;line-height:1.55" data-sync-note></div>
             <div class="alert alert--info hidden" id="liveText" style="margin-top:11px"></div>
@@ -245,6 +257,8 @@
 <script src="js/config.js"></script>
 <script src="js/db.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/handoff.js"></script>
+<script src="js/diagnostics.js"></script>
 <script src="js/shell.js"></script>
 <script src="js/captions.js"></script>
 <script src="js/audio-sync.js"></script>

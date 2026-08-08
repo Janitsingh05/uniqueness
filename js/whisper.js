@@ -94,9 +94,22 @@ UQ.whisper = {
     };
   },
 
-  /* transcribe(file, { lang, onProgress })
+  /* One clip at a time — the ONNX session is not safe to run twice at once,
+     so a second upload queues behind the first instead of corrupting it. */
+  _queue: Promise.resolve(),
+
+  transcribe(file, opts) {
+    const next = this._queue.then(
+      () => this._transcribe(file, opts),
+      () => this._transcribe(file, opts)
+    );
+    this._queue = next.catch(() => {});
+    return next;
+  },
+
+  /* _transcribe(file, { lang, onProgress })
      -> { text, timedWords: [{text,start,end}], note } */
-  async transcribe(file, opts) {
+  async _transcribe(file, opts) {
     opts = opts || {};
     const step = (pct, i) => { if (opts.onProgress) opts.onProgress(pct, i); };
 

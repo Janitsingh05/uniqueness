@@ -31,13 +31,13 @@
 /* ---------- Caption block ---------- */
 .cap {
   position: absolute; left: 6%; right: 6%; bottom: var(--cap-pos, 16cqh);
-  display: flex; flex-wrap: wrap; gap: 0 .04em;
+  display: flex; flex-wrap: wrap; gap: .08em .04em;
   align-items: center; justify-content: center; text-align: center;
   font-size: var(--cap-size, 8cqh); font-family: var(--cap-font, var(--font));
-  pointer-events: none;
+  pointer-events: none; max-width: 88%; margin: 0 auto;
 }
 .cap .w {
-  display: inline-block; margin: 0 .14em; line-height: 1.1;
+  display: inline-block; margin: 0 .08em; line-height: 1.12;
   color: var(--cap-color, #fff);
   -webkit-text-stroke: var(--cap-stroke, .048em) #000;
   paint-order: stroke fill;

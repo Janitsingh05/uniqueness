@@ -263,7 +263,10 @@ UQ.editor = {
           if (stale()) return;
           console.warn('Backend transcription failed, falling back to the browser.', err);
           UQ.diag.note(err);
-          s.note = 'Caption server unavailable — transcribing in your browser instead.';
+          /* No credit or a bad key will not recover during this session, so
+             stop re-uploading whole clips just to be rejected again. */
+          if (UQ.api.isPermanentSttError(err)) UQ.api.disableTranscribe(err.message);
+          s.note = 'Caption server could not transcribe (' + err.message + ') — using your browser instead.';
           this.renderSyncCard();
           result = null;
         }

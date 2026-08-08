@@ -15,11 +15,35 @@ window.UQ = window.UQ || {};
 
 UQ.api = {
   _health: null,
+  _sttOff: null,          // reason server transcription was given up on
+  OVERRIDE_KEY: 'uq_api_base',
 
+  /* Resolution order: ?api= on the URL, then a saved override, then
+     config. The URL param is how you point a local page at a local
+     server without committing localhost into the deployed config —
+     an https:// site cannot call http://localhost anyway. */
   base() {
     const cfg = (UQ.config && UQ.config.api) || {};
-    return String(cfg.baseUrl || '').replace(/\/+$/, '');
+    let saved = '';
+    try {
+      const param = new URLSearchParams(location.search).get('api');
+      if (param !== null) {
+        if (param) localStorage.setItem(this.OVERRIDE_KEY, param);
+        else localStorage.removeItem(this.OVERRIDE_KEY);
+      }
+      saved = localStorage.getItem(this.OVERRIDE_KEY) || '';
+    } catch (e) {}
+    return String(saved || cfg.baseUrl || '').replace(/\/+$/, '');
   },
+
+  /* Called when the server's speech-to-text is configured but unusable
+     (no credit, bad key). Without this every clip would be uploaded in
+     full, rejected, then transcribed in the browser anyway. */
+  disableTranscribe(reason) {
+    this._sttOff = reason || 'unavailable';
+    if (this._health) this._health.transcribe = false;
+  },
+  transcribeDisabled() { return this._sttOff; },
 
   configured() { return !!this.base(); },
 
@@ -29,7 +53,10 @@ UQ.api = {
      never throws — a dead backend just reports everything off. */
   async health(force) {
     if (!this.configured()) return { ok: false, transcribe: false, render: false, reason: 'no backend configured' };
-    if (this._health && !force) return this._health;
+    if (this._health && !force) {
+      if (this._sttOff) this._health.transcribe = false;
+      return this._health;
+    }
 
     const timeoutMs = ((UQ.config.api && UQ.config.api.healthTimeoutMs) || 4000);
     try {
@@ -42,7 +69,14 @@ UQ.api = {
     } catch (e) {
       this._health = { ok: false, transcribe: false, render: false, reason: e.name === 'AbortError' ? 'timed out' : e.message };
     }
+    if (this._sttOff) this._health.transcribe = false;
     return this._health;
+  },
+
+  /* A quota or key problem will not fix itself mid-session; a network
+     blip might. Only the former stops us trying again. */
+  isPermanentSttError(err) {
+    return /quota|credit|billing|API key|not configured/i.test((err && err.message) || '');
   },
 
   async _json(res) {

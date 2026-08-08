@@ -49,13 +49,25 @@ npm run check             # verifies FFmpeg, the key, and the work dir
 npm start
 ```
 
-Then point the studio at it — in `js/config.js`:
+Then point the studio at it. For local work, add `?api=` to the editor URL — it is remembered in `localStorage` from then on:
 
-```js
-api: { baseUrl: 'http://localhost:8080', … }
+```
+http://localhost:8777/editor.html?api=http://localhost:8080
 ```
 
+Use `?api=` (blank) to switch back off. For a deployed backend, set it permanently in `js/config.js` instead:
+
+```js
+api: { baseUrl: 'https://your-app.onrender.com', … }
+```
+
+> Do not put `http://localhost` in the committed config. The live studio is served over HTTPS, and browsers block an HTTPS page from calling `http://` — that is exactly what the `?api=` override is for, since a local page on `http://localhost:8777` has no such problem.
+
 Open the editor, upload a clip, and the **Export** tab's *Render burned-in MP4* now produces a real file.
+
+### Rendering works without an API key
+
+The two halves are independent. FFmpeg burn-in needs no key and no credit, so a server with `OPENAI_API_KEY` empty (or out of credit) still gives you real burned-in MP4s while transcription quietly falls back to browser Whisper. The editor says which one it used, and a quota or key error switches server transcription off for the rest of the session rather than re-uploading every clip just to be rejected again.
 
 `npm run check` output on a ready machine:
 

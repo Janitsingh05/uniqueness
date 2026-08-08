@@ -70,7 +70,10 @@ UQ.diag = {
       const h = await UQ.api.health(true);
       add('Caption server', h.ok, h.ok ? UQ.api.base() : 'UNREACHABLE at ' + UQ.api.base() + ' — ' + (h.reason || ''));
       add('Server transcription', h.transcribe ? true : null,
-        h.transcribe ? 'on (' + (h.sttProvider || 'configured') + ')' : 'off — browser Whisper is used instead');
+        h.transcribe ? 'on (' + (h.sttProvider || 'configured') + ')'
+          : (UQ.api.transcribeDisabled()
+              ? 'off — ' + UQ.api.transcribeDisabled() + ' · browser Whisper is used instead'
+              : 'off — browser Whisper is used instead'));
       add('Burned-in MP4 render', h.render ? true : null,
         h.render ? (h.ffmpeg || 'FFmpeg ready') : 'off — server has no FFmpeg, so MP4 export is a preview only');
     } else {

@@ -85,7 +85,10 @@
 }
 .toggle-row.is-on { border-color: #E7E3F8; background: #F9F6FF; color: var(--purple-deep); }
 
-.switch { width: 46px; height: 26px; border-radius: 99px; background: #E0E2EC; padding: 3px; display: flex; justify-content: flex-start; flex-shrink: 0; transition: background .15s; }
+.switch { width: 46px; height: 26px; border-radius: 99px; background: #E0E2EC; padding: 3px; display: flex; justify-content: flex-start; flex-shrink: 0; transition: background .15s; position: relative; }
+/* The track is only 26px tall — extend the hit area to a comfortable 44px
+   for thumbs without changing how the switch looks. */
+.switch::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 44px; transform: translateY(-50%); }
 .switch.is-on { background: var(--grad); justify-content: flex-end; }
 .switch span { width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(20, 20, 40, .2); display: block; }
 

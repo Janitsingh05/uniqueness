@@ -1,10 +1,13 @@
 /* ============================================================
-   exporter.js — caption files + the burned-in video queue.
+   exporter.js — caption files + the burned-in video render.
 
-   SRT / VTT / TXT are generated for real and downloaded.
-   MP4 rendering is a queue simulation: burning captions into a
-   video needs a server (ffmpeg) or WebCodecs. Swap `renderVideo`
-   for a call to your render API and keep the same callbacks.
+   SRT / VTT / TXT are generated in the browser and downloaded.
+
+   MP4 rendering needs FFmpeg, which a browser does not have. With a
+   backend configured (see js/api.js) the clip and the caption lines
+   are sent to it and a real burned-in MP4 comes back. Without one,
+   renderVideo runs a demo that produces no file — and says so, rather
+   than pretending it rendered something.
    ============================================================ */
 
 window.UQ = window.UQ || {};
@@ -51,17 +54,62 @@ UQ.exporter = {
     this.download(base + '.' + kind, (comma ? '' : 'WEBVTT\n\n') + body + '\n');
   },
 
-  /* renderVideo({ duration, onProgress, onDone })
-     onProgress(pct, stepIndex) · onDone(minutesUsed) */
-  renderVideo(opts) {
+  minutesFor(duration) { return Math.max(0.5, Math.round((duration || 30) / 6) / 10); },
+
+  /* Is a real render possible right now? */
+  async canRender() {
+    if (!UQ.api || !UQ.api.configured()) return false;
+    const health = await UQ.api.health();
+    return !!health.render;
+  },
+
+  /* renderVideo({ file, lines, style, template, filename, duration,
+                   onProgress, onDone, onError })
+     onProgress(pct, stepIndex) · onDone(minutesUsed, result) */
+  async renderVideo(opts) {
+    const fail = msg => {
+      if (opts.onError) opts.onError(new Error(msg));
+      else UQ.ui.toast(msg);
+    };
+
+    if (!(await this.canRender())) return this.simulate(opts);
+    if (!opts.file) return fail('Load a clip before rendering.');
+    if (!opts.lines || !opts.lines.length) return fail('Generate captions before rendering.');
+
+    try {
+      opts.onProgress(3, 0);
+      const job = await UQ.api.startRender(opts.file, {
+        lines: opts.lines,
+        style: opts.style,
+        template: opts.template,
+        filename: opts.filename
+      });
+
+      const done = await UQ.api.waitForRender(job.id, j => {
+        /* Server steps map onto the four the modal already shows. */
+        const step = j.progress < 8 ? 0 : j.progress < 90 ? 1 : j.progress < 100 ? 2 : 3;
+        opts.onProgress(Math.max(3, j.progress), step);
+      });
+
+      opts.onProgress(100, 3);
+      const url = UQ.api.downloadUrl(done);
+      opts.onDone(done.durationMinutes || this.minutesFor(opts.duration), { url, filename: done.filename });
+    } catch (err) {
+      console.warn('[render]', err);
+      fail(err.message || 'Render failed.');
+    }
+  },
+
+  /* No backend: run the old progress animation, but hand back no file so
+     the caller can tell the user what is actually needed. */
+  simulate(opts) {
     let pct = 0;
     const tick = setInterval(() => {
       pct += 3 + Math.random() * 6;
       if (pct >= 100) {
         clearInterval(tick);
-        opts.onProgress(100, 4);
-        const minutes = Math.max(0.5, Math.round((opts.duration || 30) / 6) / 10);
-        setTimeout(() => opts.onDone(minutes), 800);
+        opts.onProgress(100, 3);
+        setTimeout(() => opts.onDone(this.minutesFor(opts.duration), { demo: true }), 600);
         return;
       }
       opts.onProgress(pct, pct < 28 ? 0 : pct < 58 ? 1 : pct < 86 ? 2 : 3);

@@ -1,0 +1,19 @@
+# Render.com blueprint. Deploy: push, then New > Blueprint > pick this repo.
+# Set OPENAI_API_KEY in the dashboard, not here.
+services:
+  - type: web
+    name: uniqueness-backend
+    runtime: docker
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    plan: starter          # free tier sleeps and has too little CPU for FFmpeg
+    healthCheckPath: /api/health
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://janitsingh05.github.io
+      - key: WORK_DIR
+        value: /tmp/uniqueness
+      - key: FFMPEG_PRESET
+        value: veryfast

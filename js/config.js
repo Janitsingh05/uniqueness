@@ -159,6 +159,20 @@ UQ.config = {
     model: 'Xenova/whisper-tiny'
   },
 
+  /* Optional caption backend (server/). Leave baseUrl empty and the whole
+     studio keeps running in the browser exactly as before.
+     Fill it in to get server-side speech-to-text and real burned-in MP4s:
+       local   → 'http://localhost:8080'
+       hosted  → 'https://your-app.onrender.com'
+     `preferServer` decides who transcribes when both are available. */
+  api: {
+    baseUrl: '',
+    preferServer: true,
+    pollMs: 1500,
+    healthTimeoutMs: 4000,
+    transcribeTimeoutMs: 900000
+  },
+
   /* Speech-to-text language codes.
      Uses Google Chrome / Edge Web Speech API (free, no key).
      That API is powered by Google's speech recogniser in-browser. */

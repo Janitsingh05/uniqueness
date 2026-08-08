@@ -65,6 +65,18 @@ UQ.diag = {
     const loaded = !!(UQ.whisper && UQ.whisper.pipe);
     add('Speech model loaded', loaded ? true : null, loaded ? 'cached in this browser' : 'not loaded yet — the first clip downloads ~40MB');
 
+    /* The backend is optional, so "not configured" is neutral, not a failure. */
+    if (UQ.api && UQ.api.configured()) {
+      const h = await UQ.api.health(true);
+      add('Caption server', h.ok, h.ok ? UQ.api.base() : 'UNREACHABLE at ' + UQ.api.base() + ' — ' + (h.reason || ''));
+      add('Server transcription', h.transcribe ? true : null,
+        h.transcribe ? 'on (' + (h.sttProvider || 'configured') + ')' : 'off — browser Whisper is used instead');
+      add('Burned-in MP4 render', h.render ? true : null,
+        h.render ? (h.ffmpeg || 'FFmpeg ready') : 'off — server has no FFmpeg, so MP4 export is a preview only');
+    } else {
+      add('Caption server', null, 'not configured — browser-only mode. MP4 render is a preview; set UQ.config.api.baseUrl to enable it.');
+    }
+
     if (file) {
       add('Clip', true, file.name + ' · ' + (file.size / 1048576).toFixed(1) + 'MB · ' + (file.type || 'unknown type'));
       const audio = await this.audioProbe(file);

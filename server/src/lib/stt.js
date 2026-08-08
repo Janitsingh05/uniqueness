@@ -1,0 +1,122 @@
+/* ============================================================
+   stt.js — speech-to-text with word-level timestamps.
+
+   OpenAI's whisper-1 is the only provider wired up today. Everything
+   else in the server talks to transcribe() and does not care, so a
+   second provider is a new branch here and nothing else.
+   ============================================================ */
+
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { config } from '../config.js';
+import { extractAudio, splitAudio, probe } from './ffmpeg.js';
+
+/* Whisper takes a plain language name or ISO code; the studio's picker
+   uses friendly labels. */
+const LANGS = {
+  'Auto-detect': undefined,
+  English: 'en',
+  Hindi: 'hi',
+  Hinglish: 'hi'
+};
+
+async function callOpenAI(filePath, { language, prompt } = {}) {
+  const bytes = await fs.readFile(filePath);
+  const form = new FormData();
+  form.append('file', new Blob([bytes], { type: 'audio/mpeg' }), path.basename(filePath));
+  form.append('model', config.stt.model);
+  form.append('response_format', 'verbose_json');
+  /* Repeated field — this is what unlocks per-word start/end times. */
+  form.append('timestamp_granularities[]', 'word');
+  if (language) form.append('language', language);
+  if (prompt) form.append('prompt', prompt);
+
+  const res = await fetch(`${config.stt.baseUrl}/audio/transcriptions`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${config.stt.apiKey}` },
+    body: form
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    let detail = body.slice(0, 300);
+    try { detail = JSON.parse(body).error?.message || detail; } catch (e) {}
+    if (res.status === 401) throw new Error('Speech-to-text rejected the API key. Check OPENAI_API_KEY.');
+    if (res.status === 429) throw new Error('Speech-to-text rate limit or quota reached. Check your OpenAI billing.');
+    throw new Error(`Speech-to-text failed (${res.status}): ${detail}`);
+  }
+  return res.json();
+}
+
+/* Whisper returns { word, start, end }; the studio's engine wants
+   { text, start, end } and absolute times across chunk boundaries. */
+function normaliseWords(result, offset) {
+  const words = Array.isArray(result.words) ? result.words : [];
+  return words
+    .map(w => ({
+      text: String(w.word ?? w.text ?? '').trim(),
+      start: Number(w.start) + offset,
+      end: Number(w.end) + offset
+    }))
+    .filter(w => w.text && Number.isFinite(w.start) && Number.isFinite(w.end));
+}
+
+/* transcribe(videoPath, { language, onProgress })
+   -> { text, words: [{text,start,end}], duration, chunks } */
+export async function transcribe(videoPath, opts = {}) {
+  const { onProgress = () => {}, language } = opts;
+  const id = opts.id || path.parse(videoPath).name;
+  const audioDir = opts.audioDir;
+
+  onProgress(5, 'Reading the clip');
+  const media = await probe(videoPath);
+  if (!media.hasAudio) {
+    throw new Error('This clip has no audio track, so there is nothing to transcribe.');
+  }
+
+  onProgress(15, 'Extracting the audio track');
+  const audio = await extractAudio(videoPath, audioDir, id);
+
+  /* One request unless the audio is too big for the API's limit. */
+  const limit = config.stt.maxAudioMb * 1024 * 1024;
+  const pieces = audio.size <= limit
+    ? [{ path: audio.path, offset: 0 }]
+    : await splitAudio(audio.path, audioDir, id, config.stt.chunkSeconds);
+
+  const lang = LANGS[language] ?? (language || undefined);
+  const words = [];
+  const texts = [];
+
+  for (let i = 0; i < pieces.length; i++) {
+    const pct = 25 + Math.round((i / pieces.length) * 65);
+    onProgress(pct, pieces.length > 1
+      ? `Transcribing part ${i + 1} of ${pieces.length}`
+      : 'Listening to every word');
+
+    const result = await callOpenAI(pieces[i].path, {
+      language: lang,
+      /* Feeding the tail of the previous chunk back in keeps names and
+         spelling consistent across a split. */
+      prompt: texts.length ? texts[texts.length - 1].slice(-220) : undefined
+    });
+
+    if (result.text) texts.push(String(result.text).trim());
+    words.push(...normaliseWords(result, pieces[i].offset));
+  }
+
+  onProgress(95, 'Locking captions to the voice');
+
+  /* Clean up the audio we made; the caller still owns the video. */
+  await Promise.allSettled([
+    fs.unlink(audio.path),
+    ...pieces.filter(p => p.path !== audio.path).map(p => fs.unlink(p.path))
+  ]);
+
+  const text = texts.join(' ').replace(/\s+/g, ' ').trim();
+  return {
+    text: text || words.map(w => w.text).join(' '),
+    words,
+    duration: media.duration,
+    chunks: pieces.length
+  };
+}

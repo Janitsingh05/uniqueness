@@ -20,6 +20,7 @@ UQ.editor = {
     segments: null, speechTotal: 0, energy: null, timedWords: null,
     vocalSync: true, sensitivity: 5,
     note: '', live: '', failure: '', analysing: false, rendering: false, renderPct: 0, renderDone: false,
+    renderUrl: null, renderName: null,
     projectId: null, style: null, lines: []
   },
 
@@ -240,15 +241,34 @@ UQ.editor = {
       s.energy = voice.energy || null;
       if (voice.segments) s.vocalSync = true;
 
-      /* 2) Whisper STT with word timestamps from the file itself */
-      const result = await UQ.whisper.transcribe(file, {
-        onProgress: (pct, step) => {
+      /* 2) Speech-to-text with word timestamps, from the file itself.
+            The backend is used when one is configured and reachable;
+            otherwise Whisper runs here in the browser exactly as before. */
+      const onSttProgress = (pct, step) => {
+        if (stale()) return;
+        beat = Date.now();
+        const mapped = 24 + Math.round((pct / 100) * 70);
+        UQ.ui.progress.set(mapped, Math.min(steps.length - 1, (step || 0) + 1));
+      };
+
+      let result;
+      const useServer = await this.serverCanTranscribe();
+      if (useServer) {
+        try {
+          result = await UQ.api.transcribe(file, {
+            language: (JSON.parse(localStorage.getItem('uq_settings_v1') || '{}') || {}).lang,
+            onProgress: onSttProgress
+          });
+        } catch (err) {
           if (stale()) return;
-          beat = Date.now();
-          const mapped = 24 + Math.round((pct / 100) * 70);
-          UQ.ui.progress.set(mapped, Math.min(steps.length - 1, (step || 0) + 1));
+          console.warn('Backend transcription failed, falling back to the browser.', err);
+          UQ.diag.note(err);
+          s.note = 'Caption server unavailable — transcribing in your browser instead.';
+          this.renderSyncCard();
+          result = null;
         }
-      });
+      }
+      if (!result) result = await UQ.whisper.transcribe(file, { onProgress: onSttProgress });
       if (stale()) return;
 
       if (result.text) {
@@ -304,6 +324,15 @@ UQ.editor = {
         this.renderAll();
       }
     }
+  },
+
+  /* Backend is optional and must never block the studio, so a missing or
+     unhealthy server just means "transcribe in the browser". */
+  async serverCanTranscribe() {
+    if (!UQ.api.configured()) return false;
+    if (UQ.config.api && UQ.config.api.preferServer === false) return false;
+    const health = await UQ.api.health();
+    return !!health.transcribe;
   },
 
   /* One loud, persistent place that says why there are no captions.
@@ -725,7 +754,8 @@ UQ.editor = {
     UQ.ui.el('#renderFill').style.width = s.renderPct + '%';
     UQ.ui.el('#renderBtn').textContent = s.rendering
       ? 'Rendering ' + Math.round(s.renderPct) + '%'
-      : s.renderDone ? 'Download MP4' : 'Render burned-in MP4';
+      : s.renderDone && s.renderUrl ? 'Download MP4 again'
+      : s.renderDone ? 'Render again' : 'Render burned-in MP4';
     UQ.ui.el('#renderCost').textContent = s.renderDone
       ? 'Done · ' + this.user.minutes + ' min left'
       : 'Uses ' + (Math.round((s.duration || 30) / 6) / 10 || 0.5) + ' min of credit';
@@ -742,23 +772,66 @@ UQ.editor = {
   render() {
     const s = this.state;
     if (s.rendering) return;
-    if (s.renderDone) { s.renderDone = false; s.renderPct = 0; return this.renderExportPanel(); }
+    /* Second click on a finished render downloads it again. */
+    if (s.renderDone) {
+      if (s.renderUrl) return this.downloadRender();
+      s.renderDone = false; s.renderPct = 0;
+      return this.renderExportPanel();
+    }
     s.rendering = true;
+    s.renderUrl = null;
     UQ.ui.progress.open('Rendering your video', 'Captions are being burned into the clip — you can keep this open.', UQ.exporter.STEPS);
+
+    const tpl = UQ.config.templates.find(t => t.id === s.style.tpl) || UQ.config.templates[0];
     UQ.exporter.renderVideo({
+      file: s.file,
+      lines: s.lines,
+      style: s.style,
+      template: tpl,
+      filename: s.filename,
       duration: s.duration,
       onProgress: (pct, step) => { s.renderPct = pct; UQ.ui.progress.set(pct, step); this.renderExportPanel(); },
-      onDone: minutes => {
+      onError: err => {
+        UQ.ui.progress.close();
+        s.rendering = false;
+        s.renderPct = 0;
+        UQ.diag.note(err);
+        this.showFailure('Render failed — ' + (err.message || err));
+        this.renderExportPanel();
+        UQ.ui.toast('Render failed');
+      },
+      onDone: (minutes, result) => {
         UQ.ui.progress.close();
         s.rendering = false;
         s.renderDone = true;
+        s.renderUrl = (result && result.url) || null;
+        s.renderName = (result && result.filename) || null;
         this.user = UQ.db.spendMinutes(this.user.id, minutes);
         UQ.db.addEvent(this.user.id, { icon: '↓', tone: 'purple', text: 'Rendered a video — ' + minutes + ' min used' });
         UQ.shell.refresh('editor', 'Caption editor');
         this.renderExportPanel();
-        UQ.ui.toast('Render finished · ' + minutes + ' min used');
+
+        if (s.renderUrl) {
+          this.downloadRender();
+          UQ.ui.toast('Render finished · ' + minutes + ' min used');
+        } else {
+          /* Demo mode produced no file — say so instead of implying one. */
+          this.showFailure('This was a preview run — no MP4 was produced. Burning captions into video needs the render server (see server/README.md). Your SRT, VTT and TXT downloads are real.');
+          UQ.ui.toast('Preview only — no render server connected');
+        }
       }
     });
+  },
+
+  downloadRender() {
+    const s = this.state;
+    if (!s.renderUrl) return;
+    const a = document.createElement('a');
+    a.href = s.renderUrl;
+    a.download = s.renderName || 'captioned.mp4';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   },
 
   paintFrame(force) {

@@ -6,6 +6,21 @@ kinetic styles. Export a subtitle file or a burned-in MP4.
 
 Live pages: landing → sign up → dashboard → editor → credits.
 
+The studio is a **static site with no build step** — plain HTML, CSS and
+`window.UQ` JavaScript. Everything runs in the browser: Whisper transcribes
+the clip on-device and subtitle files are generated locally.
+
+An **optional backend** in [`server/`](server/README.md) adds server-side
+speech-to-text (OpenAI `whisper-1`) and real burned-in MP4 rendering via
+FFmpeg — the one thing a browser cannot do. The studio works with or
+without it; see [server/README.md](server/README.md) for the full flow.
+
+```
+                     ┌─ no backend ─→ Whisper in the browser, subtitle files only
+Upload a clip ───────┤
+                     └─ backend on ──→ /api/transcribe → /api/render → burned-in MP4
+```
+
 ---
 
 ## Run it
@@ -77,6 +92,8 @@ site/
     ├── db.js             ⭐ data layer (localStorage today, your API later)
     ├── ui.js             DOM helpers, formatting, progress modal, toasts
     ├── handoff.js        carries an uploaded clip from dashboard → editor
+    ├── api.js            optional backend client (fails soft to browser mode)
+    ├── diagnostics.js    "why did my captions not generate?" report
     ├── shell.js          renders sidebar + topbar, guards signed-out users
     ├── auth.js           login.html controller
     ├── captions.js       timing engine: words → lines → active word
@@ -112,6 +129,8 @@ Load order on every app page: `config → db → ui → shell → (feature files
 | Voice detection tuning | `js/config.js` → `vocalSync` |
 | Filler words that get cut | `js/config.js` → `fillerWords` |
 | Referral rewards | `js/config.js` → `referral` |
+| Backend on/off, its URL | `js/config.js` → `api.baseUrl` (empty = browser-only) |
+| Speech-to-text key, FFmpeg quality | `server/.env` — see [server/README.md](server/README.md) |
 
 ### Adding a 12th caption style
 
@@ -152,8 +171,8 @@ That's it — the dropdown, the library, the dashboard tiles and the filters all
 | --- | --- | --- |
 | Shared accounts across devices | `js/firebase-config.js` | Paste Firebase web keys — Auth + Firestore turn on automatically. |
 | Real payments | `js/credits.js` → `pay()` | Call Razorpay / Stripe. On success, same `addMinutes` + `addOrder` + `addEvent`. |
-| Higher-accuracy file STT | `js/speech.js` | Optional later: Google Cloud Speech via Cloud Function. Web Speech (free) works today. |
-| Burned-in MP4 | `js/exporter.js` → `renderVideo()` | POST the clip + caption JSON to an ffmpeg worker; poll progress. |
+| Higher-accuracy file STT | `server/` | **Built.** Set `OPENAI_API_KEY` in `server/.env` and `api.baseUrl` in `js/config.js`. Falls back to browser Whisper if the server is down. |
+| Burned-in MP4 | `server/` | **Built.** FFmpeg burns the editor's own caption lines into the clip. Without the server the export button is a preview and says so. |
 
 Data currently lives under the localStorage key `uq_studio_db_v1`
 (plus `uq_settings_v1` and `uq_plugin_waitlist`). Clearing site data resets the app.

@@ -1,0 +1,20 @@
+{
+  "name": "uniqueness-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Caption backend for uniqueness — audio extraction, speech-to-text, and burned-in MP4 rendering.",
+  "main": "src/index.js",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "check": "node src/check.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}

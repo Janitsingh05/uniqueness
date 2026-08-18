@@ -6,7 +6,9 @@ services:
     runtime: docker
     dockerfilePath: ./server/Dockerfile
     dockerContext: ./server
-    plan: starter          # free tier sleeps and has too little CPU for FFmpeg
+    plan: free              # $0. Sleeps after 15min idle and is slow on FFmpeg —
+                             # a burn-in render can take minutes instead of seconds.
+                             # Bump to 'starter' later if that becomes a problem.
     healthCheckPath: /api/health
     envVars:
       - key: OPENAI_API_KEY

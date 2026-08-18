@@ -159,17 +159,19 @@ UQ.config = {
     model: 'Xenova/whisper-tiny'
   },
 
-  /* Optional caption backend (server/). Leave baseUrl empty and the whole
-     studio keeps running in the browser exactly as before.
-     Fill it in to get server-side speech-to-text and real burned-in MP4s:
-       local   → 'http://localhost:8080'
-       hosted  → 'https://your-app.onrender.com'
-     `preferServer` decides who transcribes when both are available. */
+  /* Optional caption backend (server/), deployed at server/render.yaml's
+     free-tier Render service. Leave baseUrl empty to force the whole
+     studio back to running in the browser only.
+     `preferServer` decides who transcribes when both are available.
+     healthTimeoutMs is generous because the free plan sleeps after 15
+     minutes idle — the instance that wakes it up eats a cold-start
+     health check, so a short timeout would wrongly look "down" and
+     silently fall back to the browser for that one request. */
   api: {
-    baseUrl: '',
+    baseUrl: 'https://uniqueness-backend.onrender.com',
     preferServer: true,
     pollMs: 1500,
-    healthTimeoutMs: 4000,
+    healthTimeoutMs: 20000,
     transcribeTimeoutMs: 900000
   },
 

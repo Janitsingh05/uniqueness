@@ -11,54 +11,91 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="css/tokens.css" />
 <link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/layout.css" />
 <link rel="stylesheet" href="css/components.css" />
 <link rel="stylesheet" href="css/captions.css" />
 <link rel="stylesheet" href="css/pages.css" />
 </head>
 <body style="background:#fff">
 
-<header class="site-nav">
-  <a href="index.html"><img src="assets/images/uniqueness-logo.png" alt="uniqueness — home" /></a>
-  <div class="grow"></div>
-  <a class="site-nav__link" href="#how">How it works</a>
-  <a class="site-nav__link" href="#styles">Styles</a>
-  <a class="site-nav__link" href="#pricing">Pricing</a>
-  <a class="site-nav__link" href="#faq">FAQ</a>
-  <a class="site-nav__link" href="login.html">Sign in</a>
-  <a class="btn btn--primary" href="login.html?mode=signup">Get started free</a>
+<header class="site-nav" id="siteNav">
+  <div class="site-nav__inner">
+    <a class="site-nav__brand" href="index.html"><img src="assets/images/uniqueness-logo.png" alt="uniqueness — home" /></a>
+    <div class="grow"></div>
+    <nav class="site-nav__links">
+      <a class="site-nav__link" href="#how">How it works</a>
+      <a class="site-nav__link" href="#compare">Why it's different</a>
+      <a class="site-nav__link" href="#styles">Styles</a>
+      <a class="site-nav__link" href="#pricing">Pricing</a>
+      <a class="site-nav__link" href="#faq">FAQ</a>
+    </nav>
+    <a class="site-nav__link site-nav__signin" href="login.html">Sign in</a>
+    <a class="btn btn--primary" href="login.html?mode=signup">Get started free</a>
+    <button class="site-nav__burger" id="navBurger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
 </header>
 
-<section class="hero">
-  <div>
-    <div class="hero__tag"><span class="hero__dot"></span> CAPTION STUDIO · EST 2026</div>
-    <h1>Captions that<br /><span class="grad-text">earn the scroll</span></h1>
-    <p>Upload a clip. uniqueness times every word to your voice and animates it so people keep watching — short-form that looks directed, not subtitled.</p>
-    <div class="row-wrap" style="margin-bottom:20px">
-      <a class="btn btn--primary btn--lg" href="login.html?mode=signup">Caption my first clip — free</a>
-      <a class="btn btn--ghost btn--lg" href="#styles">See it move →</a>
+<div class="nav-drawer" id="navDrawer">
+  <div class="nav-drawer__scrim"></div>
+  <div class="nav-drawer__panel">
+    <div class="nav-drawer__head">
+      <img src="assets/images/uniqueness-logo.png" alt="uniqueness" />
+      <button class="nav-drawer__close" id="navDrawerClose" type="button" aria-label="Close menu">✕</button>
     </div>
-    <div class="hero__facts">
-      <span>No credit card needed</span>
-      <span>Ready in seconds</span>
-      <span>Fluent in Hinglish</span>
-    </div>
+    <a class="site-nav__link" href="#how">How it works</a>
+    <a class="site-nav__link" href="#compare">Why it's different</a>
+    <a class="site-nav__link" href="#styles">Styles</a>
+    <a class="site-nav__link" href="#pricing">Pricing</a>
+    <a class="site-nav__link" href="#faq">FAQ</a>
+    <a class="site-nav__link" href="login.html">Sign in</a>
+    <a class="btn btn--primary btn--block" href="login.html?mode=signup">Get started free</a>
   </div>
+</div>
 
-  <div>
-    <div class="phone">
-      <div class="phone__label">9:16</div>
-      <!-- Sizes come from .pc-* in pages.css so they scale with the phone. -->
-      <div class="phone__caps">
-        <span class="pc pc--punch">GO VIRAL</span>
-        <span class="pc pc--word">every <b>single</b> word</span>
-        <span class="pc pc--chip pv-chip"><span>styled</span><span>your</span><span>way</span></span>
-        <span class="pc pc--neon">no editing</span>
-        <span class="pc pc--serif serif">ship it <b>today</b></span>
+<section class="hero">
+  <div class="hero__glow" aria-hidden="true"><i></i><i></i></div>
+  <div class="hero__inner">
+    <div>
+      <div class="hero__tag"><span class="hero__dot"></span> CAPTION STUDIO · EST 2026</div>
+      <h1>Captions that<br /><span class="grad-text">earn the scroll</span></h1>
+      <p>Upload a clip. uniqueness times every word to your voice and animates it so people keep watching — short-form that looks directed, not subtitled.</p>
+      <div class="row-wrap" style="margin-bottom:20px">
+        <a class="btn btn--primary btn--lg" href="login.html?mode=signup">Caption my first clip — free</a>
+        <a class="btn btn--ghost btn--lg" href="#styles">See it move →</a>
       </div>
-      <div class="phone__bar">
-        <span class="phone__play">▶</span>
-        <span class="phone__track"><i></i></span>
-        <span class="phone__time">0:12</span>
+      <div class="hero__facts">
+        <span>No credit card needed</span>
+        <span>Ready in seconds</span>
+        <span>Fluent in Hinglish</span>
+      </div>
+      <div class="hero__platforms">
+        <span>Built for</span>
+        <b>TikTok</b><b>Reels</b><b>Shorts</b><b>Snapchat</b>
+      </div>
+    </div>
+
+    <div class="hero__stage">
+      <div class="phone">
+        <div class="phone__label">9:16</div>
+        <!-- Sizes come from .pc-* in pages.css so they scale with the phone. -->
+        <div class="phone__caps">
+          <span class="pc pc--punch">GO VIRAL</span>
+          <span class="pc pc--word">every <b>single</b> word</span>
+          <span class="pc pc--chip pv-chip"><span>styled</span><span>your</span><span>way</span></span>
+          <span class="pc pc--neon">no editing</span>
+          <span class="pc pc--serif serif">ship it <b>today</b></span>
+        </div>
+        <div class="phone__bar">
+          <span class="phone__play">▶</span>
+          <span class="phone__track"><i></i></span>
+          <span class="phone__time">0:12</span>
+        </div>
+      </div>
+      <div class="hero__badge">
+        <span class="hero__badge-dot">✓</span>
+        <div><b>Word-perfect timing</b><span>Locked to your voice, automatically</span></div>
       </div>
     </div>
   </div>
@@ -71,7 +108,7 @@
   </div>
 </div>
 
-<section class="land-section">
+<section class="land-section reveal">
   <div class="land-section__inner">
     <p class="eyebrow">The honest part</p>
     <h2>Most captions are an afterthought.</h2>
@@ -80,33 +117,60 @@
   </div>
 </section>
 
-<section class="land-section land-section--tint" id="how">
+<section class="land-section land-section--tint reveal" id="compare">
+  <div class="land-section__inner">
+    <p class="eyebrow">Side by side</p>
+    <h2>Same clip. Same voice. Different director.</h2>
+    <p class="land-lead" style="margin-bottom:28px">Flat subtitles just relay what was said. uniqueness directs it — timed to the beat, styled to match the energy of the cut.</p>
+    <div class="compare">
+      <article class="compare__card">
+        <span class="compare__tag">Flat subtitle</span>
+        <div class="preview preview--tall">
+          <span class="compare__cap--flat">so here's the thing about growth on social right now</span>
+        </div>
+        <p class="compare__note">Reads fine. Forgettable. Nobody has decided to keep watching yet.</p>
+      </article>
+      <article class="compare__card">
+        <span class="compare__tag compare__tag--grad">uniqueness</span>
+        <div id="compareAfter"></div>
+        <p class="compare__note">Locked to your voice, styled to move — built to earn the next three seconds.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="land-section reveal" id="how">
   <div class="land-section__inner">
     <p class="eyebrow">How it works</p>
     <h2>From raw clip to ready.</h2>
     <p class="land-lead" style="margin-bottom:36px">Five stages, fully automatic — but every one is yours to override.</p>
     <div class="grid grid--cards land-steps">
       <article class="land-step">
+        <span class="land-step__icon">⌕</span>
         <span class="land-step__num">01</span>
         <h3>Transcribe</h3>
         <p>Accurate speech-to-text with real word-level timestamps. Your clip stays private — nothing is uploaded.</p>
       </article>
       <article class="land-step">
+        <span class="land-step__icon">◔</span>
         <span class="land-step__num">02</span>
         <h3>Time</h3>
         <p>Every word is locked to the exact moment it's spoken, then grouped into lines by natural rhythm.</p>
       </article>
       <article class="land-step">
+        <span class="land-step__icon">✦</span>
         <span class="land-step__num">03</span>
         <h3>Direct</h3>
         <p>11 kinetic styles — one-word punch-ins, karaoke highlights, neon glow — applied in a tap.</p>
       </article>
       <article class="land-step">
+        <span class="land-step__icon">▦</span>
         <span class="land-step__num">04</span>
         <h3>Cut</h3>
         <p>Edit the script live — captions adjust to your words and re-match the voice automatically.</p>
       </article>
       <article class="land-step">
+        <span class="land-step__icon">⇩</span>
         <span class="land-step__num">05</span>
         <h3>Export</h3>
         <p>Burn captions into 9:16, 1:1, or 16:9 — or pull a clean SRT, VTT, or TXT. Fast, and ready to post.</p>
@@ -115,7 +179,7 @@
   </div>
 </section>
 
-<section class="land-section" id="styles">
+<section class="land-section reveal" id="styles">
   <div class="land-section__inner">
     <div class="spread row-wrap" style="align-items:flex-end;margin-bottom:28px;gap:16px">
       <div>
@@ -129,28 +193,36 @@
   </div>
 </section>
 
-<section class="land-section land-section--tint">
+<section class="land-section land-section--tint reveal">
   <div class="land-section__inner">
     <div class="grid grid--stats land-stats">
-      <div class="land-stat"><b>0</b><span>fuss — drop a clip and captions write themselves</span></div>
-      <div class="land-stat"><b>11</b><span>kinetic styles, every one running live</span></div>
-      <div class="land-stat"><b>3</b><span>aspect ratios, made for every feed</span></div>
-      <div class="land-stat"><b>0</b><span>setup headaches — free to start</span></div>
+      <div class="land-stat"><b data-count="0">0</b><span>fuss — drop a clip and captions write themselves</span></div>
+      <div class="land-stat"><b data-count="11">11</b><span>kinetic styles, every one running live</span></div>
+      <div class="land-stat"><b data-count="3">3</b><span>aspect ratios, made for every feed</span></div>
+      <div class="land-stat"><b data-count="0">0</b><span>setup headaches — free to start</span></div>
     </div>
   </div>
 </section>
 
-<section class="land-section" id="pricing">
+<section class="land-section reveal" id="pricing">
   <div class="land-section__inner">
-    <p class="eyebrow">Billing · EST 2026</p>
-    <h2>Upgrade your studio</h2>
-    <p class="land-lead" style="margin-bottom:32px">Every caption style is free. Upgrade for more captioning time, clean 4K exports, and no watermark.</p>
+    <div class="spread row-wrap" style="align-items:flex-end;margin-bottom:20px;gap:16px">
+      <div>
+        <p class="eyebrow">Billing · EST 2026</p>
+        <h2 style="margin-bottom:8px">Upgrade your studio</h2>
+        <p class="land-lead" style="margin-bottom:0">Every caption style is free. Upgrade for more captioning time, clean 4K exports, and no watermark.</p>
+      </div>
+      <div class="segmented" id="pricingToggle">
+        <button data-billing="monthly" class="is-on" type="button">Monthly</button>
+        <button data-billing="packs" type="button">One-time packs</button>
+      </div>
+    </div>
     <div class="grid grid--plans" id="pricingPreview"></div>
     <p style="font-size:12.5px;color:var(--faint);margin-top:22px;text-align:center">Switch or pause your plan in two clicks · Secure payments via Razorpay (connect when ready)</p>
   </div>
 </section>
 
-<section class="land-section land-section--tint" id="faq">
+<section class="land-section land-section--tint reveal" id="faq">
   <div class="land-section__inner land-section__inner--narrow">
     <p class="eyebrow">Questions, answered.</p>
     <h2 style="margin-bottom:28px">FAQ</h2>
@@ -158,7 +230,7 @@
   </div>
 </section>
 
-<section class="land-section">
+<section class="land-section reveal">
   <div class="land-section__inner">
     <div class="cta-band">
       <div>

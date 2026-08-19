@@ -14,9 +14,9 @@
    verify signatures and log what they would have done.
    ============================================================ */
 
-import admin from 'firebase-admin';
+import { initializeApp, cert } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
-let app = null;
 let firestore = null;
 let attempted = false;
 
@@ -27,8 +27,8 @@ function init() {
   if (!raw) return;
   try {
     const serviceAccount = JSON.parse(raw);
-    app = admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-    firestore = admin.firestore();
+    const app = initializeApp({ credential: cert(serviceAccount) });
+    firestore = getFirestore(app);
   } catch (e) {
     console.error('[firebase-admin] FIREBASE_SERVICE_ACCOUNT is set but invalid:', e.message);
   }

@@ -99,25 +99,66 @@ Renders are held in memory and on disk, then deleted after `RETENTION_MINUTES` (
 Razorpay checkout, wired the way it has to be for real money: the browser
 never sees `RAZORPAY_KEY_SECRET`, and a payment is only treated as real
 once this server has independently verified the signature Razorpay signs
-with that secret. Setup:
+with that secret. Two flows share the same verify endpoint:
+
+- **Packs (one-time)** — `create-order` → Checkout with an `order_id`.
+- **Monthly (recurring)** — `create-subscription` → Checkout with a
+  `subscription_id`, against a Razorpay **Plan** created once via
+  `node scripts/setup-razorpay-plans.js` (paste the printed `plan_id`s
+  into `src/lib/plans.js`).
+
+Setup:
 
 ```bash
 cd server
 # https://dashboard.razorpay.com/app/keys
 echo "RAZORPAY_KEY_ID=rzp_live_or_test_…" >> .env
 echo "RAZORPAY_KEY_SECRET=…" >> .env
+node scripts/setup-razorpay-plans.js   # creates the 3 monthly Plans, prints their ids
 ```
 
 Then in `js/config.js`, set `payments.keyId` to the same **Key ID** (it is
 meant to be public — Checkout needs it client-side) and `payments.enabled
-= true`. `js/payments.js` does the rest: create an order here, open
-Razorpay Checkout, verify the signature here on success, then grant
-credits the same way demo checkout always did.
+= true`. `js/payments.js` does the rest: create an order or subscription
+here, open Razorpay Checkout, verify the signature here on success.
 
-Prices live in two places on purpose — `js/config.js` for what the user
-sees, `src/lib/plans.js` for what they are actually charged — because the
-server must never trust a client-supplied amount. Keep them in sync by
-hand when a price changes.
+Prices (and, for monthly, `planId`) live in two places on purpose —
+`js/config.js` for what the user sees, `src/lib/plans.js` for what they
+are actually charged — because the server must never trust a
+client-supplied amount or plan id. Keep them in sync by hand when a price
+changes.
+
+**Webhook** (`POST /api/payments/webhook`) is what makes renewals actually
+work: a subscription's monthly charge happens whether or not anyone has
+the site open, so there is no browser around to call `verify()`. Add the
+URL in Razorpay Dashboard → Settings → Webhooks, pick `subscription.charged`,
+`subscription.cancelled`, `subscription.halted`, and `payment.captured` —
+and note **you** choose the webhook secret when you add it there (unlike
+`RAZORPAY_KEY_SECRET`, Razorpay does not generate this one for you):
+
+```bash
+echo "RAZORPAY_WEBHOOK_SECRET=<the secret you typed into the dashboard>" >> .env
+```
+
+**Crediting a webhook event needs Firebase Admin**, since it writes
+straight to Firestore with no user session involved:
+
+```bash
+# Firebase Console -> Project settings -> Service accounts
+# -> Generate new private key -> paste the whole JSON on one line
+echo 'FIREBASE_SERVICE_ACCOUNT={"type":"service_account",...}' >> .env
+```
+
+Without it, `/api/payments/verify` still verifies signatures correctly —
+the browser's own `UQ.db.grant()` covers the first payment either way —
+but a renewal's `subscription.charged` webhook has nowhere to write the
+credit, so it logs what it would have done and stops there. `GET
+/api/health`'s `accounts` field reports whether this is wired up.
+
+Crediting is idempotent by Razorpay payment id (see `src/lib/credits.js`)
+because a subscription's first charge fires **both** the client's
+`verify()` call and a `subscription.charged` webhook for that same
+payment — without the dedup key, both would credit the user.
 
 ---
 

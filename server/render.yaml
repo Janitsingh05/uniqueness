@@ -1,5 +1,6 @@
 # Render.com blueprint. Deploy: push, then New > Blueprint > pick this repo.
-# Set OPENAI_API_KEY and the RAZORPAY_* keys in the dashboard, not here.
+# Set OPENAI_API_KEY, the RAZORPAY_* keys, and FIREBASE_SERVICE_ACCOUNT in
+# the dashboard, not here.
 services:
   - type: web
     name: uniqueness-backend
@@ -16,6 +17,10 @@ services:
       - key: RAZORPAY_KEY_ID
         sync: false
       - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT   # full service-account JSON, one line
         sync: false
       - key: ALLOWED_ORIGINS
         value: https://janitsingh05.github.io

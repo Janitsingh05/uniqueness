@@ -21,6 +21,7 @@ UQ.editor = {
     vocalSync: true, sensitivity: 5,
     note: '', live: '', failure: '', analysing: false, rendering: false, renderPct: 0, renderDone: false,
     renderUrl: null, renderName: null,
+    translating: false, translatedLines: null, translatedLang: '',
     projectId: null, style: null, lines: []
   },
 
@@ -774,6 +775,81 @@ UQ.editor = {
       const files = { srt: '#dlSrt', vtt: '#dlVtt', txt: '#dlTxt' };
       Object.entries(files).forEach(([kind, sel]) => UQ.ui.el(sel).addEventListener('click', () =>
         UQ.exporter.captionFile(kind, this.state.lines, { upper: this.state.style.upper, filename: this.state.filename })));
+    }
+
+    this.renderTranslatePanel();
+  },
+
+  renderTranslatePanel() {
+    const s = this.state;
+    const sel = UQ.ui.el('#translateLang');
+    const btn = UQ.ui.el('#translateBtn');
+    const note = UQ.ui.el('#translateNote');
+    const dl = UQ.ui.el('#translateDownloads');
+    if (!sel || !btn) return;
+
+    if (!sel.dataset.bound) {
+      sel.dataset.bound = '1';
+      sel.innerHTML = (UQ.config.translateLangs || [])
+        .map(l => '<option value="' + l.code + '">' + l.name + '</option>').join('');
+      sel.value = 'hi';
+      sel.addEventListener('change', () => {
+        /* A different target invalidates whatever was translated before. */
+        s.translatedLines = null;
+        s.translatedLang = '';
+        this.renderTranslatePanel();
+      });
+      btn.addEventListener('click', () => this.translateCaptions());
+    }
+
+    btn.disabled = s.translating || !s.lines.length;
+    btn.textContent = s.translating ? 'Translating…'
+      : !s.lines.length ? 'Generate captions first'
+      : s.translatedLines ? 'Translate again'
+      : 'Translate this clip’s captions';
+
+    if (s.translatedLines && s.translatedLang === sel.value) {
+      const langName = (UQ.config.translateLangs.find(l => l.code === s.translatedLang) || {}).name || s.translatedLang;
+      note.textContent = 'Ready in ' + langName + ' — same timing, translated text.';
+      dl.classList.remove('hidden');
+      dl.innerHTML = ['srt', 'vtt', 'txt'].map(kind =>
+        '<button class="dl-row" data-tkind="' + kind + '"><span>Download ' + langName + ' .' + kind + '</span><span style="color:#6D34E8">↓</span></button>'
+      ).join('');
+      dl.querySelectorAll('[data-tkind]').forEach(b => b.addEventListener('click', () =>
+        UQ.exporter.captionFile(b.dataset.tkind, s.translatedLines, {
+          upper: s.style.upper,
+          filename: (s.filename || 'uniqueness-captions') + '-' + s.translatedLang
+        })));
+    } else {
+      dl.classList.add('hidden');
+      dl.innerHTML = '';
+      note.textContent = 'Same voice timing, translated text — same clip, another language.';
+    }
+  },
+
+  async translateCaptions() {
+    const s = this.state;
+    if (s.translating || !s.lines.length) return;
+    const target = UQ.ui.el('#translateLang').value;
+
+    s.translating = true;
+    this.renderTranslatePanel();
+
+    try {
+      if (!(await UQ.exporter.canTranslate())) {
+        throw new Error('Translation needs the caption server — it may be waking up (free plan), try again in a moment.');
+      }
+      const res = await UQ.api.translate(s.lines, { target });
+      s.translatedLines = res.lines;
+      s.translatedLang = target;
+      UQ.ui.toast(res.note || 'Captions translated');
+    } catch (err) {
+      console.warn('[translate]', err);
+      UQ.diag.note(err);
+      UQ.ui.toast(err.message || 'Translation failed');
+    } finally {
+      s.translating = false;
+      this.renderTranslatePanel();
     }
   },
 

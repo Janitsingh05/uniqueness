@@ -180,6 +180,27 @@ UQ.config = {
      That API is powered by Google's speech recogniser in-browser. */
   speechLangs: { 'Auto-detect': 'en-IN', English: 'en-IN', Hindi: 'hi-IN', Hinglish: 'hi-IN' },
 
+  /* Caption translation targets — server/src/lib/translate.js (MyMemory,
+     free, no key). Codes are the ISO pairs MyMemory expects. */
+  translateLangs: [
+    { code: 'en', name: 'English' },
+    { code: 'hi', name: 'Hindi' },
+    { code: 'es', name: 'Spanish' },
+    { code: 'pt', name: 'Portuguese' },
+    { code: 'fr', name: 'French' },
+    { code: 'ar', name: 'Arabic' },
+    { code: 'id', name: 'Indonesian' },
+    { code: 'de', name: 'German' },
+    { code: 'ja', name: 'Japanese' },
+    { code: 'ko', name: 'Korean' },
+    { code: 'tr', name: 'Turkish' },
+    { code: 'it', name: 'Italian' },
+    { code: 'ru', name: 'Russian' },
+    { code: 'bn', name: 'Bengali' },
+    { code: 'ta', name: 'Tamil' },
+    { code: 'ur', name: 'Urdu' }
+  ],
+
   /* Sidebar navigation — add a page here and it appears everywhere. */
   nav: [
     { group: 'Studio', items: [

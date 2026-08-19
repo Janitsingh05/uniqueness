@@ -88,6 +88,7 @@ The two halves are independent. FFmpeg burn-in needs no key and no credit, so a 
 | `POST /api/render` | multipart `clip` + `payload` JSON `{ lines, style, template, filename }` → `202 { id, status }` |
 | `GET /api/render/:id` | `{ status, progress, step, downloadUrl }` — poll while `status` is `queued`/`working` |
 | `GET /api/render/:id/file` | the finished MP4 |
+| `POST /api/translate` | JSON `{ lines, source, target }` → `{ lines, target, note }` — needs no key (MyMemory, free) |
 
 Renders are held in memory and on disk, then deleted after `RETENTION_MINUTES` (default 60).
 

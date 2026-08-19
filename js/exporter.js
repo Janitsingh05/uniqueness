@@ -63,6 +63,14 @@ UQ.exporter = {
     return !!health.render;
   },
 
+  /* Translation needs no API key server-side, so it is available
+     whenever a backend is configured and reachable at all. */
+  async canTranslate() {
+    if (!UQ.api || !UQ.api.configured()) return false;
+    const health = await UQ.api.health();
+    return !!health.translate;
+  },
+
   /* renderVideo({ file, lines, style, template, filename, duration,
                    onProgress, onDone, onError })
      onProgress(pct, stepIndex) · onDone(minutesUsed, result) */

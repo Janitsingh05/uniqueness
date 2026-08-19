@@ -145,6 +145,18 @@ UQ.api = {
     return this._json(res);
   },
 
+  /* translate(lines, { source, target }) -> { lines, target, note }
+     Needs no key server-side, so it works even when transcribe is off. */
+  async translate(lines, opts) {
+    opts = opts || {};
+    const res = await fetch(this.url('/api/translate'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lines, source: opts.source || 'en', target: opts.target })
+    });
+    return this._json(res);
+  },
+
   downloadUrl(job) {
     return job && job.downloadUrl ? this.base() + job.downloadUrl : null;
   },

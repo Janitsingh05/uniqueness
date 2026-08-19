@@ -19,6 +19,7 @@ import { ffmpegVersion } from './lib/ffmpeg.js';
 import { startCleanup } from './lib/jobs.js';
 import { transcribeRouter } from './routes/transcribe.js';
 import { renderRouter } from './routes/render.js';
+import { translateRouter } from './routes/translate.js';
 
 ensureDirs();
 
@@ -38,6 +39,7 @@ app.get('/api/health', async (req, res) => {
     /* The studio reads these to decide what to offer. */
     transcribe: sttConfigured(),
     render: !!ffmpeg,
+    translate: true,           // MyMemory needs no key, so this is always on
     ffmpeg: ffmpeg || null,
     sttProvider: sttConfigured() ? config.stt.provider : null,
     maxUploadMb: config.maxUploadMb
@@ -46,6 +48,7 @@ app.get('/api/health', async (req, res) => {
 
 app.use('/api', transcribeRouter);
 app.use('/api', renderRouter);
+app.use('/api', translateRouter);
 
 app.use((req, res) => res.status(404).json({ error: 'Not found: ' + req.method + ' ' + req.path }));
 
@@ -65,6 +68,7 @@ const server = app.listen(config.port, () => {
   console.log(`uniqueness backend listening on http://localhost:${config.port}`);
   console.log(`  transcribe : ${sttConfigured() ? 'ready (' + config.stt.provider + ')' : 'OFF — set OPENAI_API_KEY'}`);
   ffmpegVersion().then(v => console.log(`  render     : ${v ? 'ready — ' + v.slice(0, 48) : 'OFF — FFmpeg not found on PATH'}`));
+  console.log('  translate  : ready (MyMemory, no key needed)');
   console.log(`  work dir   : ${config.workDir}`);
 });
 

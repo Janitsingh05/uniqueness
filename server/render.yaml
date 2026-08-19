@@ -23,7 +23,9 @@ services:
       - key: FIREBASE_SERVICE_ACCOUNT   # full service-account JSON, one line
         sync: false
       - key: ALLOWED_ORIGINS
-        value: https://janitsingh05.github.io
+        # The same repo deploys to both GitHub Pages and the branded
+        # custom domain (Vercel) — both need to be allowed to call this API.
+        value: https://janitsingh05.github.io,https://www.uniqueness.online,https://uniqueness.online
       - key: WORK_DIR
         value: /tmp/uniqueness
       - key: FFMPEG_PRESET

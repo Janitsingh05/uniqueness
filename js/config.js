@@ -129,9 +129,9 @@ UQ.config = {
   faq: [
     { q: 'Does it work with Hinglish and accents?', a: 'Yes — uniqueness handles English, Hindi, and natural Hinglish. Fast talkers and strong accents are fine; you can always edit the script and captions re-match the voice.' },
     { q: 'How do captions lock to my voice?', a: 'On upload we transcribe the clip on-device and lock every word to the moment it is spoken, then group lines by natural rhythm. Edit the script anytime — timing adjusts with it.' },
-    { q: 'Which aspect ratios can I export?', a: '9:16 for Reels and Shorts, 1:1 for feed posts, and 16:9 for YouTube — plus clean SRT, VTT, and TXT.' },
-    { q: 'How does billing work?', a: 'Every caption style is free. You only pay for captioning minutes and clean exports. Payment gateway hooks are ready — connect Razorpay when you go live. Until then checkout runs in demo mode.' },
-    { q: 'Is my clip uploaded to a server?', a: 'Transcription and voice sync run in your browser. Clips stay on your device unless you later connect a cloud render worker.' }
+    { q: 'Which aspect ratios can I export?', a: '9:16 for Reels and Shorts, 1:1 for feed posts, and 16:9 for YouTube — plus clean SRT, VTT, and TXT, or a real burned-in MP4.' },
+    { q: 'How does billing work?', a: 'Every caption style is free. Pay only for captioning minutes and clean exports — a one-time credit pack or a monthly plan, both through secure Razorpay checkout (UPI, cards, netbanking).' },
+    { q: 'Is my clip uploaded to a server?', a: 'Voice sync and captioning run in your browser by default and never leave your device. Signing in also unlocks higher-accuracy server-side transcription and real burned-in MP4 exports when you want them.' }
   ],
 
   /* Referral economics. */

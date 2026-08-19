@@ -192,6 +192,7 @@ UQ.credits = {
     if (UQ.payments && UQ.payments.ready()) {
       try {
         await UQ.payments.checkout(plan, {
+          billing: this.billing,
           method: this.method,
           onSuccess: () => {
             this.grant(plan);

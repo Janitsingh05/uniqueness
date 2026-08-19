@@ -89,8 +89,35 @@ The two halves are independent. FFmpeg burn-in needs no key and no credit, so a 
 | `GET /api/render/:id` | `{ status, progress, step, downloadUrl }` — poll while `status` is `queued`/`working` |
 | `GET /api/render/:id/file` | the finished MP4 |
 | `POST /api/translate` | JSON `{ lines, source, target }` → `{ lines, target, note }` — needs no key (MyMemory, free) |
+| `POST /api/payments/create-order` | JSON `{ billing, tier }` → `{ orderId, amount, currency, keyId }`. Amount is looked up server-side from `src/lib/plans.js` — the client never says how much to charge. |
+| `POST /api/payments/verify` | JSON `{ razorpay_order_id, razorpay_payment_id, razorpay_signature, billing, tier }` → `{ verified }`. HMAC-checked against `RAZORPAY_KEY_SECRET` — a client "payment succeeded" callback is never trusted on its own. |
 
 Renders are held in memory and on disk, then deleted after `RETENTION_MINUTES` (default 60).
+
+### Payments
+
+Razorpay checkout, wired the way it has to be for real money: the browser
+never sees `RAZORPAY_KEY_SECRET`, and a payment is only treated as real
+once this server has independently verified the signature Razorpay signs
+with that secret. Setup:
+
+```bash
+cd server
+# https://dashboard.razorpay.com/app/keys
+echo "RAZORPAY_KEY_ID=rzp_live_or_test_…" >> .env
+echo "RAZORPAY_KEY_SECRET=…" >> .env
+```
+
+Then in `js/config.js`, set `payments.keyId` to the same **Key ID** (it is
+meant to be public — Checkout needs it client-side) and `payments.enabled
+= true`. `js/payments.js` does the rest: create an order here, open
+Razorpay Checkout, verify the signature here on success, then grant
+credits the same way demo checkout always did.
+
+Prices live in two places on purpose — `js/config.js` for what the user
+sees, `src/lib/plans.js` for what they are actually charged — because the
+server must never trust a client-supplied amount. Keep them in sync by
+hand when a price changes.
 
 ---
 

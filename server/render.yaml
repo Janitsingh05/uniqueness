@@ -1,5 +1,5 @@
 # Render.com blueprint. Deploy: push, then New > Blueprint > pick this repo.
-# Set OPENAI_API_KEY in the dashboard, not here.
+# Set OPENAI_API_KEY and the RAZORPAY_* keys in the dashboard, not here.
 services:
   - type: web
     name: uniqueness-backend
@@ -12,6 +12,10 @@ services:
     healthCheckPath: /api/health
     envVars:
       - key: OPENAI_API_KEY
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
         sync: false
       - key: ALLOWED_ORIGINS
         value: https://janitsingh05.github.io

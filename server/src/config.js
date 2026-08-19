@@ -48,6 +48,13 @@ export const config = {
     /* OpenAI rejects audio over 25MB, so long clips are split. Stay under it. */
     maxAudioMb: num(process.env.STT_MAX_AUDIO_MB, 20),
     chunkSeconds: num(process.env.STT_CHUNK_SECONDS, 600)
+  },
+
+  /* keyId is public (the client needs it to open Checkout); keySecret must
+     never leave this server — it signs orders and verifies payments. */
+  razorpay: {
+    keyId: process.env.RAZORPAY_KEY_ID || '',
+    keySecret: process.env.RAZORPAY_KEY_SECRET || ''
   }
 };
 
@@ -63,4 +70,8 @@ export function ensureDirs() {
 
 export function sttConfigured() {
   return config.stt.provider === 'openai' && !!config.stt.apiKey;
+}
+
+export function paymentsConfigured() {
+  return !!(config.razorpay.keyId && config.razorpay.keySecret);
 }

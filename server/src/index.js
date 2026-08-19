@@ -14,12 +14,13 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
-import { config, ensureDirs, sttConfigured } from './config.js';
+import { config, ensureDirs, sttConfigured, paymentsConfigured } from './config.js';
 import { ffmpegVersion } from './lib/ffmpeg.js';
 import { startCleanup } from './lib/jobs.js';
 import { transcribeRouter } from './routes/transcribe.js';
 import { renderRouter } from './routes/render.js';
 import { translateRouter } from './routes/translate.js';
+import { paymentsRouter } from './routes/payments.js';
 
 ensureDirs();
 
@@ -40,6 +41,7 @@ app.get('/api/health', async (req, res) => {
     transcribe: sttConfigured(),
     render: !!ffmpeg,
     translate: true,           // MyMemory needs no key, so this is always on
+    payments: paymentsConfigured(),
     ffmpeg: ffmpeg || null,
     sttProvider: sttConfigured() ? config.stt.provider : null,
     maxUploadMb: config.maxUploadMb
@@ -49,6 +51,7 @@ app.get('/api/health', async (req, res) => {
 app.use('/api', transcribeRouter);
 app.use('/api', renderRouter);
 app.use('/api', translateRouter);
+app.use('/api', paymentsRouter);
 
 app.use((req, res) => res.status(404).json({ error: 'Not found: ' + req.method + ' ' + req.path }));
 
@@ -69,6 +72,7 @@ const server = app.listen(config.port, () => {
   console.log(`  transcribe : ${sttConfigured() ? 'ready (' + config.stt.provider + ')' : 'OFF — set OPENAI_API_KEY'}`);
   ffmpegVersion().then(v => console.log(`  render     : ${v ? 'ready — ' + v.slice(0, 48) : 'OFF — FFmpeg not found on PATH'}`));
   console.log('  translate  : ready (MyMemory, no key needed)');
+  console.log(`  payments   : ${paymentsConfigured() ? 'ready (razorpay)' : 'OFF — set RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET'}`);
   console.log(`  work dir   : ${config.workDir}`);
 });
 

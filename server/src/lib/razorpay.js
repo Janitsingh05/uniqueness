@@ -31,17 +31,49 @@ export async function createOrder({ amount, currency = 'INR', receipt, notes }) 
   return rzp.orders.create({ amount, currency, receipt, notes });
 }
 
+/* total_count: 120 monthly cycles (10 years) — Razorpay subscriptions need
+   a finite count; this is effectively "until cancelled" for a real user. */
+export async function createSubscription({ planId, notes, customerNotify = 1 }) {
+  const rzp = getClient();
+  if (!rzp) throw new Error('Payments are not configured on this server.');
+  return rzp.subscriptions.create({
+    plan_id: planId,
+    customer_notify: customerNotify,
+    total_count: 120,
+    notes
+  });
+}
+
+function hmacHex(payload) {
+  return crypto.createHmac('sha256', config.razorpay.keySecret).update(payload).digest('hex');
+}
+function safeEqual(expected, actual) {
+  try {
+    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(actual || ''));
+  } catch (e) {
+    return false; // length mismatch etc. — definitely not a match
+  }
+}
+
 /* True only if this exact order+payment pair was signed by Razorpay with
    our Key Secret — the one check that turns a client callback into proof. */
 export function verifyPaymentSignature({ orderId, paymentId, signature }) {
   if (!paymentsConfigured()) return false;
-  const expected = crypto
-    .createHmac('sha256', config.razorpay.keySecret)
-    .update(orderId + '|' + paymentId)
-    .digest('hex');
-  try {
-    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature || ''));
-  } catch (e) {
-    return false; // length mismatch etc. — definitely not a match
-  }
+  return safeEqual(hmacHex(orderId + '|' + paymentId), signature);
+}
+
+/* Subscriptions sign a different pair — payment_id|subscription_id,
+   not order_id|payment_id, because there is no order for a subscription. */
+export function verifySubscriptionSignature({ subscriptionId, paymentId, signature }) {
+  if (!paymentsConfigured()) return false;
+  return safeEqual(hmacHex(paymentId + '|' + subscriptionId), signature);
+}
+
+/* Webhooks sign the raw request body, not an id pair — Razorpay's own
+   secret for this (set when you add the webhook URL) is separate from
+   the Key Secret and lives in RAZORPAY_WEBHOOK_SECRET. */
+export function verifyWebhookSignature({ rawBody, signature }) {
+  if (!config.razorpay.webhookSecret) return false;
+  const expected = crypto.createHmac('sha256', config.razorpay.webhookSecret).update(rawBody).digest('hex');
+  return safeEqual(expected, signature);
 }

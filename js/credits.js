@@ -193,6 +193,7 @@ UQ.credits = {
       try {
         await UQ.payments.checkout(plan, {
           billing: this.billing,
+          uid: this.user.id,
           method: this.method,
           onSuccess: () => {
             this.grant(plan);

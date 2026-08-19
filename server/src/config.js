@@ -51,10 +51,13 @@ export const config = {
   },
 
   /* keyId is public (the client needs it to open Checkout); keySecret must
-     never leave this server — it signs orders and verifies payments. */
+     never leave this server — it signs orders and verifies payments.
+     webhookSecret is a separate value Razorpay gives you when you add
+     the webhook URL in the dashboard — not the same as keySecret. */
   razorpay: {
     keyId: process.env.RAZORPAY_KEY_ID || '',
-    keySecret: process.env.RAZORPAY_KEY_SECRET || ''
+    keySecret: process.env.RAZORPAY_KEY_SECRET || '',
+    webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || ''
   }
 };
 

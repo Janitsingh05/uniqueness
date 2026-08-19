@@ -18,12 +18,14 @@ UQ.config = {
   /* New accounts start with this much credit (in minutes). */
   freeMinutes: 3,
 
-  /* Razorpay (or other) — leave enabled:false until you paste a key.
-     Space reserved so the gateway drops in later without rewriting credits.js. */
+  /* Razorpay — LIVE keys. keyId is meant to be public (Checkout needs it
+     client-side); every rupee is still verified server-side before any
+     credit is granted, and packs/monthly pricing here must stay in sync
+     by hand with server/src/lib/plans.js. */
   payments: {
     provider: 'razorpay',
-    keyId: '',
-    enabled: false
+    keyId: 'rzp_live_TRVPzTsGYfYt1m',
+    enabled: true
   },
 
   /* Caption templates. `mode` drives the timing engine:

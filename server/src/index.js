@@ -21,6 +21,8 @@ import { transcribeRouter } from './routes/transcribe.js';
 import { renderRouter } from './routes/render.js';
 import { translateRouter } from './routes/translate.js';
 import { paymentsRouter } from './routes/payments.js';
+import { webhookRouter } from './routes/webhook.js';
+import { adminConfigured } from './lib/firebase-admin.js';
 
 ensureDirs();
 
@@ -31,6 +33,12 @@ app.use(cors({
   origin: config.allowedOrigins.includes('*') ? true : config.allowedOrigins,
   methods: ['GET', 'POST', 'OPTIONS']
 }));
+
+/* Razorpay signs the exact raw request bytes, so the webhook route needs
+   express.raw() instead of the JSON parser below — and has to be wired
+   up before that global parser touches the body. */
+app.use('/api', webhookRouter);
+
 app.use(express.json({ limit: '4mb' }));
 
 app.get('/api/health', async (req, res) => {
@@ -42,6 +50,7 @@ app.get('/api/health', async (req, res) => {
     render: !!ffmpeg,
     translate: true,           // MyMemory needs no key, so this is always on
     payments: paymentsConfigured(),
+    accounts: adminConfigured(),   // server-side crediting (webhooks need this)
     ffmpeg: ffmpeg || null,
     sttProvider: sttConfigured() ? config.stt.provider : null,
     maxUploadMb: config.maxUploadMb
@@ -73,6 +82,7 @@ const server = app.listen(config.port, () => {
   ffmpegVersion().then(v => console.log(`  render     : ${v ? 'ready — ' + v.slice(0, 48) : 'OFF — FFmpeg not found on PATH'}`));
   console.log('  translate  : ready (MyMemory, no key needed)');
   console.log(`  payments   : ${paymentsConfigured() ? 'ready (razorpay)' : 'OFF — set RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET'}`);
+  console.log(`  accounts   : ${adminConfigured() ? 'ready (firebase-admin)' : 'OFF — set FIREBASE_SERVICE_ACCOUNT (needed for webhook crediting)'}`);
   console.log(`  work dir   : ${config.workDir}`);
 });
 

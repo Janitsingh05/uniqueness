@@ -252,6 +252,7 @@ UQ.editor = {
       };
 
       let result;
+      let serverFailNote = null;
       const useServer = await this.serverCanTranscribe();
       if (useServer) {
         try {
@@ -266,7 +267,8 @@ UQ.editor = {
           /* No credit or a bad key will not recover during this session, so
              stop re-uploading whole clips just to be rejected again. */
           if (UQ.api.isPermanentSttError(err)) UQ.api.disableTranscribe(err.message);
-          s.note = 'Caption server could not transcribe (' + err.message + ') — using your browser instead.';
+          serverFailNote = 'Caption server could not transcribe (' + err.message + ') — used your browser instead.';
+          s.note = serverFailNote;
           this.renderSyncCard();
           result = null;
         }
@@ -274,13 +276,16 @@ UQ.editor = {
       if (!result) result = await UQ.whisper.transcribe(file, { onProgress: onSttProgress });
       if (stale()) return;
 
+      /* The browser model is a weaker fallback (tiny, no language hint by
+         default) — if it also comes up empty, that is worth keeping in
+         view rather than burying the real reason under a generic note. */
       if (result.text) {
         s.transcript = result.text;
         s.draft = result.text;
         s.timedWords = result.timedWords && result.timedWords.length ? result.timedWords : null;
-        s.note = result.note;
+        s.note = serverFailNote ? serverFailNote + ' ' + result.note : result.note;
       } else {
-        s.note = result.note || voice.note;
+        s.note = (serverFailNote ? serverFailNote + ' ' : '') + (result.note || voice.note);
         s.timedWords = null;
       }
 

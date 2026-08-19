@@ -439,6 +439,20 @@ UQ.editor = {
     this._scriptTimer = setTimeout(() => this.softResyncFromScript(), 850);
   },
 
+  /* Devanagari script -> Hinglish (Roman), in place in the textarea, then
+     reuse the same live pipeline as typing so captions retime immediately. */
+  convertToHinglish() {
+    const ta = UQ.ui.el('#transcript');
+    const text = ta ? ta.value : '';
+    if (!/[ऀ-ॿ]/.test(text)) {
+      UQ.ui.toast('No Hindi script here to convert');
+      return;
+    }
+    ta.value = UQ.transliterate.toHinglish(text);
+    this.onScriptEdit();
+    UQ.ui.toast('Converted to Hinglish');
+  },
+
   /* After typing pauses, rebuild word timing from voice energy + latest script. */
   async softResyncFromScript() {
     const s = this.state;
@@ -726,6 +740,7 @@ UQ.editor = {
       ta.value = s.draft || s.transcript;
       ta.addEventListener('input', () => this.onScriptEdit());
       UQ.ui.el('#applyScriptBtn').addEventListener('click', () => this.applyScript());
+      UQ.ui.el('#hinglishBtn').addEventListener('click', () => this.convertToHinglish());
       UQ.ui.el('#resetScriptBtn').addEventListener('click', () => this.resetScript());
       UQ.ui.el('#fillerToggle').addEventListener('click', () => { s.cutFiller = !s.cutFiller; this.recompute(); this.renderAll(); });
       UQ.ui.el('#vocalToggle').addEventListener('click', () => {

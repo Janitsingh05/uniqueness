@@ -2,7 +2,7 @@
 
 Optional Node/Express service that adds the two things a browser cannot do well:
 
-1. **Server-side speech-to-text** — OpenAI `whisper-1` with word-level timestamps. More accurate than the in-browser model and no ~40MB download for the user.
+1. **Server-side speech-to-text** — word-level timestamps, more accurate than the in-browser model and no download for the user. Two providers: OpenAI `whisper-1` (paid, needs billing) or **Groq `whisper-large-v3`** (free tier, no card — set `STT_PROVIDER=groq` and `GROQ_API_KEY`; see `.env.example`).
 2. **Burned-in MP4 rendering** — FFmpeg draws the captions into the video. This is the part the studio could not do at all before; the old export button was a progress animation that produced no file.
 
 **The studio works without this server.** Leave `UQ.config.api.baseUrl` empty and everything runs in the browser exactly as it does today. Every call here fails soft: if the server is down, misconfigured or slow, the editor falls back to browser Whisper and tells the user.

@@ -1,9 +1,14 @@
 /* ============================================================
    stt.js — speech-to-text with word-level timestamps.
 
-   OpenAI's whisper-1 is the only provider wired up today. Everything
-   else in the server talks to transcribe() and does not care, so a
-   second provider is a new branch here and nothing else.
+   Two providers, same shape: OpenAI's whisper-1 (paid, ~$0.006/min)
+   and Groq's whisper-large-v3 (free tier, no card). Groq's API is
+   OpenAI-compatible for /audio/transcriptions — same multipart
+   fields, same verbose_json + word timestamps — so one function
+   serves both; only the base URL, key and model differ.
+
+   config.stt.provider picks which one server/.env's key is for.
+   Everything past transcribe() talks to one shape and does not care.
    ============================================================ */
 
 import fs from 'node:fs/promises';
@@ -20,16 +25,20 @@ const LANGS = {
   Hinglish: 'hi'
 };
 
-async function callOpenAI(filePath, { language, prompt } = {}) {
+async function callProvider(filePath, { language, prompt } = {}) {
   const bytes = await fs.readFile(filePath);
   const form = new FormData();
   form.append('file', new Blob([bytes], { type: 'audio/mpeg' }), path.basename(filePath));
   form.append('model', config.stt.model);
   form.append('response_format', 'verbose_json');
-  /* Repeated field — this is what unlocks per-word start/end times. */
+  /* Repeated field — this is what unlocks per-word start/end times.
+     Both OpenAI and Groq support this the same way. */
   form.append('timestamp_granularities[]', 'word');
   if (language) form.append('language', language);
   if (prompt) form.append('prompt', prompt);
+
+  const providerName = config.stt.provider === 'groq' ? 'Groq' : 'OpenAI';
+  const keyEnvVar = config.stt.provider === 'groq' ? 'GROQ_API_KEY' : 'OPENAI_API_KEY';
 
   const res = await fetch(`${config.stt.baseUrl}/audio/transcriptions`, {
     method: 'POST',
@@ -47,16 +56,16 @@ async function callOpenAI(filePath, { language, prompt } = {}) {
       code = parsed.code || parsed.type || '';
     } catch (e) {}
 
-    if (res.status === 401) throw new Error('Speech-to-text rejected the API key. Check OPENAI_API_KEY in server/.env.');
+    if (res.status === 401) throw new Error(`Speech-to-text rejected the API key. Check ${keyEnvVar} in server/.env.`);
 
-    /* 429 covers two very different problems. Out of credit is a billing
-       fix and will not pass on retry; a true rate limit will. OpenAI's own
-       message names the exact page to visit, so pass it through rather than
-       replacing it with something vaguer. */
+    /* 429 covers two very different problems. Out of credit/quota is a
+       billing fix and will not pass on retry; a true rate limit will.
+       The provider's own message names the exact page to visit, so pass
+       it through rather than replacing it with something vaguer. */
     if (res.status === 429) {
       const noCredit = /insufficient_quota|credit_balance_exhausted/i.test(code) || /no credits|billing/i.test(detail);
       throw new Error(noCredit
-        ? `No OpenAI credit: ${detail}`
+        ? `No ${providerName} credit: ${detail}`
         : `Speech-to-text is rate limited, try again shortly: ${detail}`);
     }
     throw new Error(`Speech-to-text failed (${res.status}): ${detail}`);
@@ -109,7 +118,7 @@ export async function transcribe(videoPath, opts = {}) {
       ? `Transcribing part ${i + 1} of ${pieces.length}`
       : 'Listening to every word');
 
-    const result = await callOpenAI(pieces[i].path, {
+    const result = await callProvider(pieces[i].path, {
       language: lang,
       /* Feeding the tail of the previous chunk back in keeps names and
          spelling consistent across a split. */

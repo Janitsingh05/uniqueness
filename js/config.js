@@ -155,10 +155,14 @@ UQ.config = {
   },
 
   /* Upload → auto captions. Whisper runs in the browser (free, no key).
-     First use downloads a ~40MB model once, then caches it. */
+     First use downloads the model once, then caches it.
+     'whisper-tiny' (~40MB) is fast but weak, especially on Hindi/Hinglish
+     and anything less than a clean studio recording. 'whisper-base'
+     (~145MB) is a meaningfully more accurate free upgrade — bigger
+     one-time download, still runs entirely on-device, still $0. */
   autoCaption: {
     onUpload: true,
-    model: 'Xenova/whisper-tiny'
+    model: 'Xenova/whisper-base'
   },
 
   /* Optional caption backend (server/), deployed at server/render.yaml's

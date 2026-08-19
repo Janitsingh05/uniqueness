@@ -40,15 +40,24 @@ export const config = {
     crf: num(process.env.FFMPEG_CRF, 20)
   },
 
-  stt: {
-    provider: process.env.STT_PROVIDER || 'openai',
-    apiKey: process.env.OPENAI_API_KEY || '',
-    model: process.env.STT_MODEL || 'whisper-1',
-    baseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-    /* OpenAI rejects audio over 25MB, so long clips are split. Stay under it. */
-    maxAudioMb: num(process.env.STT_MAX_AUDIO_MB, 20),
-    chunkSeconds: num(process.env.STT_CHUNK_SECONDS, 600)
-  },
+  /* STT_PROVIDER=openai (default, paid, ~$0.006/min) or =groq (free tier,
+     no card — get a key at console.groq.com/keys). Groq's API is
+     OpenAI-compatible for /audio/transcriptions, so provider only changes
+     which key/URL/default model get used — see lib/stt.js. */
+  stt: (() => {
+    const provider = process.env.STT_PROVIDER || 'openai';
+    const isGroq = provider === 'groq';
+    return {
+      provider,
+      apiKey: (isGroq ? process.env.GROQ_API_KEY : process.env.OPENAI_API_KEY) || '',
+      model: process.env.STT_MODEL || (isGroq ? 'whisper-large-v3' : 'whisper-1'),
+      baseUrl: process.env.STT_BASE_URL || (isGroq ? 'https://api.groq.com/openai/v1' : 'https://api.openai.com/v1'),
+      /* OpenAI rejects audio over 25MB, so long clips are split. Groq's
+         limit is higher on paid tiers but 20MB is a safe default either way. */
+      maxAudioMb: num(process.env.STT_MAX_AUDIO_MB, 20),
+      chunkSeconds: num(process.env.STT_CHUNK_SECONDS, 600)
+    };
+  })(),
 
   /* keyId is public (the client needs it to open Checkout); keySecret must
      never leave this server — it signs orders and verifies payments.
@@ -72,7 +81,7 @@ export function ensureDirs() {
 }
 
 export function sttConfigured() {
-  return config.stt.provider === 'openai' && !!config.stt.apiKey;
+  return !!config.stt.apiKey;
 }
 
 export function paymentsConfigured() {

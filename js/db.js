@@ -217,6 +217,58 @@ UQ.db = {
     }
   },
 
+  /* One popup covers both "new visitor" and "returning user" — Firebase
+     doesn't distinguish sign-up from sign-in for Google, so this checks
+     Firestore itself and only writes a fresh profile the first time a
+     given Google account shows up, exactly like _fbSignUp does. */
+  async signInWithGoogle(referral) {
+    if (this.mode !== 'firebase') throw new Error('Google sign-in needs Firebase to be connected — see js/firebase-config.js.');
+
+    const provider = new firebase.auth.GoogleAuthProvider();
+    let cred;
+    try {
+      cred = await this._auth.signInWithPopup(provider);
+    } catch (err) {
+      if (err.code === 'auth/popup-closed-by-user') throw new Error('Sign-in was closed before finishing.');
+      if (err.code === 'auth/popup-blocked') throw new Error('Your browser blocked the sign-in popup — allow popups for this site and try again.');
+      if (err.code === 'auth/account-exists-with-different-credential') throw new Error('An account with this email already exists using a different sign-in method — sign in with email/password instead.');
+      throw new Error(err.message || 'Could not sign in with Google.');
+    }
+
+    const uid = cred.user.uid;
+    const snap = await this._fs.collection('users').doc(uid).get();
+    const isNew = !snap.exists;
+    if (isNew) {
+      const name = cred.user.displayName || (cred.user.email || '').split('@')[0] || 'Creator';
+      const code = this._makeCode(name);
+      const referredBy = (referral || '').trim().toUpperCase() || null;
+      const profile = {
+        name,
+        email: (cred.user.email || '').toLowerCase(),
+        minutes: referredBy ? (UQ.config.referral.freeMinutesForFriend || UQ.config.freeMinutes) : UQ.config.freeMinutes,
+        plan: 'Free',
+        code,
+        referredBy,
+        provider: 'google',
+        created: Date.now()
+      };
+      await this._fs.collection('users').doc(uid).set(profile);
+      await this._fs.collection('codes').doc(code).set({ uid, at: Date.now() });
+      await this._fs.collection('users').doc(uid).collection('events').add({
+        icon: '✦', tone: 'teal', text: 'Account created — ' + profile.minutes + ' free minutes added', at: Date.now()
+      });
+      if (referredBy) {
+        try {
+          await this._fs.collection('referralHits').doc(referredBy).collection('members').doc(uid).set({
+            name: profile.name, plan: profile.plan, created: profile.created
+          });
+        } catch (e) {}
+      }
+    }
+    await this._hydrate(uid);
+    return { user: this._user, isNew };
+  },
+
   signOut() {
     if (this.mode === 'firebase' && this._auth) {
       this._clearCache();

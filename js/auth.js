@@ -22,6 +22,9 @@ UQ.auth = {
     UQ.ui.el('#authSwitch').addEventListener('click', () => this.setMode(this.mode === 'signup' ? 'signin' : 'signup'));
     this.form.addEventListener('submit', e => { e.preventDefault(); this.submit(); });
 
+    const googleBtn = UQ.ui.el('#googleSignIn');
+    if (googleBtn) googleBtn.addEventListener('click', () => this.googleSignIn());
+
     this.setMode(this.mode);
   },
 
@@ -75,6 +78,23 @@ UQ.auth = {
       btn.classList.remove('btn--busy');
       btn.textContent = this.mode === 'signup' ? 'Create account' : 'Sign in';
       this.showError(err.message || 'Something went wrong.');
+    }
+  },
+
+  async googleSignIn() {
+    const btn = UQ.ui.el('#googleSignIn');
+    const label = btn.textContent;
+    btn.classList.add('btn--busy');
+    btn.textContent = 'Opening Google…';
+    this.showError('');
+
+    try {
+      const { isNew } = await UQ.db.signInWithGoogle(this.presetRef);
+      location.href = isNew ? 'credits.html?welcome=1' : 'dashboard.html';
+    } catch (err) {
+      btn.classList.remove('btn--busy');
+      btn.textContent = label;
+      this.showError(err.message || 'Could not sign in with Google.');
     }
   }
 };

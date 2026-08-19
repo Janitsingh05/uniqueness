@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>SRT vs VTT vs Burned-In Captions: Which Should You Actually Use? | uniqueness</title>
+<meta name="description" content="Three ways to ship captions — SRT, VTT, and burned-in — explained plainly, with exactly when each one is the right call for the platform you're posting to." />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="https://www.uniqueness.online/blog/srt-vs-vtt-vs-burned-in-captions.html" />
+<link rel="icon" href="../assets/images/uniqueness-logo.png" />
+<meta name="theme-color" content="#7C4DFF" />
+
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://www.uniqueness.online/blog/srt-vs-vtt-vs-burned-in-captions.html" />
+<meta property="og:site_name" content="uniqueness" />
+<meta property="og:title" content="SRT vs VTT vs Burned-In Captions: Which Should You Actually Use?" />
+<meta property="og:description" content="Three ways to ship captions, explained plainly, with exactly when each one is the right call." />
+<meta property="og:image" content="https://www.uniqueness.online/assets/images/og-cover.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:locale" content="en_IN" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="SRT vs VTT vs Burned-In Captions: Which Should You Actually Use?" />
+<meta name="twitter:description" content="Three ways to ship captions, explained plainly." />
+<meta name="twitter:image" content="https://www.uniqueness.online/assets/images/og-cover.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../css/tokens.css" />
+<link rel="stylesheet" href="../css/base.css" />
+<link rel="stylesheet" href="../css/layout.css" />
+<link rel="stylesheet" href="../css/components.css" />
+<link rel="stylesheet" href="../css/pages.css" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "SRT vs VTT vs Burned-In Captions: Which Should You Actually Use?",
+  "description": "Three ways to ship captions, explained plainly, with exactly when each one is the right call for the platform you're posting to.",
+  "image": "https://www.uniqueness.online/assets/images/og-cover.png",
+  "datePublished": "2026-08-19",
+  "dateModified": "2026-08-19",
+  "author": { "@type": "Organization", "name": "uniqueness" },
+  "publisher": { "@type": "Organization", "name": "uniqueness", "logo": { "@type": "ImageObject", "url": "https://www.uniqueness.online/assets/images/uniqueness-logo.png" } },
+  "mainEntityOfPage": "https://www.uniqueness.online/blog/srt-vs-vtt-vs-burned-in-captions.html"
+}
+</script>
+</head>
+<body style="background:#fff">
+
+<header class="site-nav" id="siteNav">
+  <div class="site-nav__inner">
+    <a class="site-nav__brand" href="../index.html"><img src="../assets/images/uniqueness-logo.png" alt="uniqueness — home" /></a>
+    <div class="grow"></div>
+    <nav class="site-nav__links">
+      <a class="site-nav__link" href="../index.html">Home</a>
+      <a class="site-nav__link" href="index.html">Blog</a>
+      <a class="site-nav__link" href="../index.html#pricing">Pricing</a>
+      <a class="site-nav__link" href="../index.html#faq">FAQ</a>
+    </nav>
+    <a class="site-nav__link site-nav__signin" href="../login.html">Sign in</a>
+    <a class="btn btn--primary" href="../login.html?mode=signup">Get started free</a>
+    <button class="site-nav__burger" id="navBurger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="nav-drawer" id="navDrawer">
+  <div class="nav-drawer__scrim"></div>
+  <div class="nav-drawer__panel">
+    <div class="nav-drawer__head">
+      <img src="../assets/images/uniqueness-logo.png" alt="uniqueness" />
+      <button class="nav-drawer__close" id="navDrawerClose" type="button" aria-label="Close menu">✕</button>
+    </div>
+    <a class="site-nav__link" href="../index.html">Home</a>
+    <a class="site-nav__link" href="index.html">Blog</a>
+    <a class="site-nav__link" href="../index.html#pricing">Pricing</a>
+    <a class="site-nav__link" href="../index.html#faq">FAQ</a>
+    <a class="site-nav__link" href="../login.html">Sign in</a>
+    <a class="btn btn--primary btn--block" href="../login.html?mode=signup">Get started free</a>
+  </div>
+</div>
+
+<article class="article">
+  <p class="eyebrow article__eyebrow">Guide · Exports</p>
+  <h1>SRT vs VTT vs Burned-In Captions: Which Should You Actually Use?</h1>
+  <p class="article__dek">Three ways to ship captions, explained plainly, with exactly when each one is the right call for the platform you're posting to.</p>
+  <p class="article__meta">Updated August 2026 · 7 min read</p>
+
+  <div class="article__body">
+    <p>"Export captions" isn't one format — it's a choice between a few genuinely different approaches, and picking the wrong one for the platform is a common, avoidable mistake. Here's what each actually is.</p>
+
+    <h2>SRT — SubRip Subtitle</h2>
+    <p>A plain text file listing timecodes and lines: <code style="font-family:var(--mono);background:var(--sunken);padding:2px 6px;border-radius:5px;font-size:14px">00:00:01,200 --&gt; 00:00:03,400</code> followed by the caption text. It's the oldest, most universally supported subtitle format — nearly every video platform, editor, and player can read one.</p>
+    <p><strong>Use it when:</strong> you're uploading to YouTube, Vimeo, or any platform with a separate "add captions" upload step, or handing the file to an editor to burn in manually later.</p>
+
+    <h2>VTT — WebVTT</h2>
+    <p>Functionally similar to SRT, but built for the web — it's the format HTML5 `&lt;track&gt;` elements expect, and it supports some styling SRT doesn't (positioning, basic formatting).</p>
+    <p><strong>Use it when:</strong> you're embedding video on your own website or app and want native, toggleable captions rather than text baked into the picture.</p>
+
+    <h2>Burned-in captions</h2>
+    <p>Not a file at all — the caption text is rendered directly into the video's pixels, permanently. There's no toggle; the captions <em>are</em> the video.</p>
+    <p><strong>Use it when:</strong> you're posting to Instagram Reels, TikTok, or YouTube Shorts. None of these platforms reliably support uploading a separate subtitle file for organic posts, and the entire point of an animated, styled caption — the thing that actually holds attention on mute — only works burned in. A subtitle file can't carry kinetic timing or style; burned-in is the only way to ship that.</p>
+
+    <h2>The trade-off that actually matters</h2>
+    <p>SRT and VTT are flexible — swap languages, let the viewer turn captions off, edit them after the fact without re-touching the video. Burned-in is committed — but it's also the only option that guarantees every viewer sees exactly the caption you designed, styled the way you designed it, on platforms that don't respect subtitle files anyway.</p>
+    <p>In practice, most short-form creators want both: a burned-in MP4 for the platforms that need it, and a clean SRT or VTT alongside it for archival, translation, or repurposing to a platform that does support subtitle files. See <a href="how-to-add-captions-to-instagram-reels.html">how to add captions to Instagram Reels</a> for the full workflow.</p>
+
+    <h2>What about translated versions?</h2>
+    <p>If you're publishing the same clip for multiple language audiences, subtitle files make that trivial — one video, several SRT/VTT files. Burned-in requires a separate render per language, since the text is part of the picture. If reaching multiple language audiences from one clip matters to you, keep a subtitle-file version around even if your primary export is burned in.</p>
+
+    <div class="article__cta">
+      <h3>Export both, in one pass</h3>
+      <p>Burned-in MP4 and clean SRT/VTT/TXT from the same captioned clip — no re-work.</p>
+      <a class="btn btn--lg" style="background:#fff;color:var(--purple-deep)" href="../login.html?mode=signup">Open the studio →</a>
+    </div>
+
+    <div class="article__related">
+      <h3>Related reading</h3>
+      <ul>
+        <li><a href="how-to-add-captions-to-instagram-reels.html">How to Add Captions to Instagram Reels</a></li>
+        <li><a href="aspect-ratio-guide-social-video.html">9:16 vs 1:1 vs 16:9: The Right Ratio for Every Platform</a></li>
+        <li><a href="free-vs-paid-caption-tools.html">Free vs Paid Caption Tools: What You Actually Need</a></li>
+      </ul>
+    </div>
+  </div>
+</article>
+
+<footer class="site-foot land-foot" style="max-width:var(--page-max);margin:0 auto;padding:0 28px 50px">
+  <div>
+    <img src="../assets/images/uniqueness-logo.png" alt="uniqueness" style="height:22px;margin-bottom:12px" />
+    <p style="font-size:12.5px;color:var(--mut);max-width:280px;line-height:1.55">A caption studio for high-performance short-form. Built for creators who care how it looks.</p>
+  </div>
+  <div class="land-foot__links">
+    <div>
+      <b>Product</b>
+      <a href="../login.html?mode=signup">Studio</a>
+      <a href="../index.html#styles">Styles</a>
+      <a href="../index.html#pricing">Pricing</a>
+    </div>
+    <div>
+      <b>Learn</b>
+      <a href="index.html">Blog</a>
+      <a href="../index.html#faq">FAQ</a>
+      <a href="../login.html">Sign in</a>
+    </div>
+  </div>
+  <span>uniqueness.online © 2026</span>
+</footer>
+
+<script src="../js/blog.js"></script>
+</body>
+</html>

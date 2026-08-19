@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>How Word-Level Caption Timing Actually Works | uniqueness</title>
+<meta name="description" content="The difference between a caption that 'looks synced' and one that's actually locked to every spoken word — how word-level timing works and why it's worth the difference." />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="https://www.uniqueness.online/blog/word-level-caption-timing-explained.html" />
+<link rel="icon" href="../assets/images/uniqueness-logo.png" />
+<meta name="theme-color" content="#7C4DFF" />
+
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://www.uniqueness.online/blog/word-level-caption-timing-explained.html" />
+<meta property="og:site_name" content="uniqueness" />
+<meta property="og:title" content="How Word-Level Caption Timing Actually Works" />
+<meta property="og:description" content="The difference between a caption that 'looks synced' and one that's actually locked to every spoken word." />
+<meta property="og:image" content="https://www.uniqueness.online/assets/images/og-cover.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:locale" content="en_IN" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="How Word-Level Caption Timing Actually Works" />
+<meta name="twitter:description" content="Why per-word timing matters more than it sounds like it should." />
+<meta name="twitter:image" content="https://www.uniqueness.online/assets/images/og-cover.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../css/tokens.css" />
+<link rel="stylesheet" href="../css/base.css" />
+<link rel="stylesheet" href="../css/layout.css" />
+<link rel="stylesheet" href="../css/components.css" />
+<link rel="stylesheet" href="../css/pages.css" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "How Word-Level Caption Timing Actually Works",
+  "description": "The difference between a caption that 'looks synced' and one that's actually locked to every spoken word.",
+  "image": "https://www.uniqueness.online/assets/images/og-cover.png",
+  "datePublished": "2026-08-19",
+  "dateModified": "2026-08-19",
+  "author": { "@type": "Organization", "name": "uniqueness" },
+  "publisher": { "@type": "Organization", "name": "uniqueness", "logo": { "@type": "ImageObject", "url": "https://www.uniqueness.online/assets/images/uniqueness-logo.png" } },
+  "mainEntityOfPage": "https://www.uniqueness.online/blog/word-level-caption-timing-explained.html"
+}
+</script>
+</head>
+<body style="background:#fff">
+
+<header class="site-nav" id="siteNav">
+  <div class="site-nav__inner">
+    <a class="site-nav__brand" href="../index.html"><img src="../assets/images/uniqueness-logo.png" alt="uniqueness — home" /></a>
+    <div class="grow"></div>
+    <nav class="site-nav__links">
+      <a class="site-nav__link" href="../index.html">Home</a>
+      <a class="site-nav__link" href="index.html">Blog</a>
+      <a class="site-nav__link" href="../index.html#pricing">Pricing</a>
+      <a class="site-nav__link" href="../index.html#faq">FAQ</a>
+    </nav>
+    <a class="site-nav__link site-nav__signin" href="../login.html">Sign in</a>
+    <a class="btn btn--primary" href="../login.html?mode=signup">Get started free</a>
+    <button class="site-nav__burger" id="navBurger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="nav-drawer" id="navDrawer">
+  <div class="nav-drawer__scrim"></div>
+  <div class="nav-drawer__panel">
+    <div class="nav-drawer__head">
+      <img src="../assets/images/uniqueness-logo.png" alt="uniqueness" />
+      <button class="nav-drawer__close" id="navDrawerClose" type="button" aria-label="Close menu">✕</button>
+    </div>
+    <a class="site-nav__link" href="../index.html">Home</a>
+    <a class="site-nav__link" href="index.html">Blog</a>
+    <a class="site-nav__link" href="../index.html#pricing">Pricing</a>
+    <a class="site-nav__link" href="../index.html#faq">FAQ</a>
+    <a class="site-nav__link" href="../login.html">Sign in</a>
+    <a class="btn btn--primary btn--block" href="../login.html?mode=signup">Get started free</a>
+  </div>
+</div>
+
+<article class="article">
+  <p class="eyebrow article__eyebrow">How it works · Captions</p>
+  <h1>How Word-Level Caption Timing Actually Works</h1>
+  <p class="article__dek">The difference between a caption that "looks synced" and one that's actually locked to every spoken word — and why that difference is bigger than it sounds.</p>
+  <p class="article__meta">Updated August 2026 · 7 min read</p>
+
+  <div class="article__body">
+    <p>Two captions can show the exact same words and still feel completely different to watch. The difference almost always comes down to timing resolution — whether the caption tool knows when the whole <em>line</em> was spoken, or when every individual <em>word</em> was spoken.</p>
+
+    <h2>Line-level timing: the common shortcut</h2>
+    <p>Many simpler caption tools work at the line level: transcribe the audio, split it into sentences, and estimate when each sentence starts and ends — often just by dividing the sentence's duration evenly across its words. The whole line appears, sits on screen for its estimated duration, then the next line replaces it.</p>
+    <p>This is fast to compute and looks fine at a glance, but it falls apart the moment you want any kind of word-by-word animation — a highlight that tracks the spoken word, or a punch-in per word — because the tool is guessing at sub-line timing rather than actually knowing it.</p>
+
+    <h2>Word-level timing: knowing the moment, not the average</h2>
+    <p>Word-level timing means the transcription itself returns a start and end timestamp for <em>every individual word</em>, not just every line. That's a meaningfully harder transcription problem — it requires the speech recognition model to align its output against the audio waveform with word-level precision, not just produce a rough transcript.</p>
+    <p>Once you have that, a caption engine can do things line-level timing simply can't: highlight the exact word being spoken in real time (see the Karaoke and Chip styles in <a href="best-caption-styles-for-short-form-video.html">our styles guide</a>), punch in one word at a time synced to actual speech rhythm rather than an even split, or let you edit the script and have the timing re-distribute correctly around your edit instead of drifting.</p>
+
+    <h2>Why the "even split" fallback is a visible tell</h2>
+    <p>When a tool doesn't have real word-level timestamps but still tries to animate word-by-word, it typically falls back to dividing the line's total duration evenly across its words — five words over two seconds becomes five words at 0.4 seconds each, regardless of how the words were actually paced in speech. Real speech is never actually even: someone might rush through three short words and land hard on the fourth. An even split animates through that pause as if it wasn't there, and the mismatch between what you hear and what you see is exactly the kind of thing that reads as "off" even to a viewer who couldn't tell you why.</p>
+
+    <h2>What this means when you're editing the script</h2>
+    <p>This is where the gap really shows. Edit a line of dialogue in a line-level tool, and the timing for that whole line has to be re-estimated from scratch — often badly. Edit a line in a properly word-level tool, and only the changed words need new timing; everything else stays locked to the voice exactly as before.</p>
+
+    <p><a href="../index.html">uniqueness</a> is built around real word-level timestamps from the transcription step onward — every one of the 11 caption styles, from one-word punch-ins to karaoke highlights, is animating against actual per-word timing, not an estimate.</p>
+
+    <div class="article__cta">
+      <h3>See word-level timing in action</h3>
+      <p>Upload a clip and watch every word lock to your voice, live.</p>
+      <a class="btn btn--lg" style="background:#fff;color:var(--purple-deep)" href="../login.html?mode=signup">Open the studio →</a>
+    </div>
+
+    <div class="article__related">
+      <h3>Related reading</h3>
+      <ul>
+        <li><a href="best-caption-styles-for-short-form-video.html">11 Caption Styles That Actually Boost Engagement</a></li>
+        <li><a href="hinglish-captions-guide.html">How to Caption Hinglish Videos Accurately</a></li>
+        <li><a href="why-captions-increase-video-views.html">Why Captioned Videos Get More Views</a></li>
+      </ul>
+    </div>
+  </div>
+</article>
+
+<footer class="site-foot land-foot" style="max-width:var(--page-max);margin:0 auto;padding:0 28px 50px">
+  <div>
+    <img src="../assets/images/uniqueness-logo.png" alt="uniqueness" style="height:22px;margin-bottom:12px" />
+    <p style="font-size:12.5px;color:var(--mut);max-width:280px;line-height:1.55">A caption studio for high-performance short-form. Built for creators who care how it looks.</p>
+  </div>
+  <div class="land-foot__links">
+    <div>
+      <b>Product</b>
+      <a href="../login.html?mode=signup">Studio</a>
+      <a href="../index.html#styles">Styles</a>
+      <a href="../index.html#pricing">Pricing</a>
+    </div>
+    <div>
+      <b>Learn</b>
+      <a href="index.html">Blog</a>
+      <a href="../index.html#faq">FAQ</a>
+      <a href="../login.html">Sign in</a>
+    </div>
+  </div>
+  <span>uniqueness.online © 2026</span>
+</footer>
+
+<script src="../js/blog.js"></script>
+</body>
+</html>

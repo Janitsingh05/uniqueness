@@ -174,3 +174,19 @@ export async function creditReferral(payingUid, opts) {
     return { ok: false, reason: err.message };
   }
 }
+
+/* getUserPlan(uid) -> 'Free' | 'Starter' | 'Creator' | 'Studio' | null.
+   null means "could not verify" (no uid, Admin not configured, no such
+   user) — callers must treat that the same as 'Free', never as paid.
+   This is what routes/render.js uses to decide the watermark server-side;
+   a client-sent "I'm on a paid plan" flag would just be a devtools edit
+   away from removing it for free. */
+export async function getUserPlan(uid) {
+  if (!adminConfigured() || !uid) return null;
+  try {
+    const snap = await db().collection('users').doc(uid).get();
+    return snap.exists ? (snap.data().plan || 'Free') : null;
+  } catch (err) {
+    return null;
+  }
+}

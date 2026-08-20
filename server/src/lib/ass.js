@@ -63,7 +63,7 @@ function wordTimes(line) {
   return line.words.map((_, i) => ({ start: start + i * per, end: start + (i + 1) * per }));
 }
 
-export function buildAss({ lines, style, width, height, template }) {
+export function buildAss({ lines, style, width, height, template, duration, watermark }) {
   /* Safety net: libass on the render machine has no Devanagari glyphs, so
      any Hindi that reaches here as Devanagari would burn in as empty boxes.
      The editor already converts fresh transcripts to Hinglish, but a
@@ -105,6 +105,12 @@ export function buildAss({ lines, style, width, height, template }) {
     /* Alignment 2 = bottom-centre, measured up by MarginV. */
     `Style: Cap,${font},${fontSize},${base},${highlight},&H00000000,&H80000000,` +
       `-1,0,0,0,100,100,0,0,1,${outline},${shadow},2,${sideMargin},${sideMargin},${marginV},1`,
+    /* Free-plan watermark. BorderStyle 3 gives an opaque box (OutlineColour
+       is the box fill here, not an outline) behind small white text —
+       matches the corner badge the editor preview already shows. Alignment
+       9 = top-right. */
+    `Style: Mark,Arial,${Math.max(14, Math.round(height * 0.016))},&H30FFFFFF,&H30FFFFFF,&HB0000000,&HB0000000,` +
+      `-1,0,0,0,100,100,0,0,3,0,0,9,${Math.round(width * 0.02)},${Math.round(width * 0.02)},${Math.round(height * 0.02)},1`,
     '',
     '[Events]',
     'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text'
@@ -143,6 +149,15 @@ export function buildAss({ lines, style, width, height, template }) {
       );
       push(t.start, t.end, parts.join(' ') + assText(sticker));
     }
+  }
+
+  /* Free-plan watermark, decided server-side by routes/render.js (looks up
+     the account's real plan via Firebase Admin — never trust a client-sent
+     flag for this, or removing it would be one devtools edit away). Spans
+     the whole clip; layer 1 keeps it above captions if they ever overlap. */
+  if (watermark) {
+    const end = Number(duration) > 0 ? duration : (events.length ? Math.max(...lines.flatMap(l => wordTimes(l).map(t => t.end))) : 1);
+    events.push(`Dialogue: 1,${assTime(0)},${assTime(end)},Mark,,0,0,0,,UNIQUENESS.ONLINE`);
   }
 
   return { content: header + '\n' + events.join('\n') + '\n', events: events.length };

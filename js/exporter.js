@@ -90,7 +90,8 @@ UQ.exporter = {
         lines: opts.lines,
         style: opts.style,
         template: opts.template,
-        filename: opts.filename
+        filename: opts.filename,
+        uid: opts.uid
       });
 
       const done = await UQ.api.waitForRender(job.id, j => {

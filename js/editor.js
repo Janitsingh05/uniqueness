@@ -978,6 +978,7 @@ UQ.editor = {
       template: tpl,
       filename: s.filename,
       duration: s.duration,
+      uid: this.user.id,
       onProgress: (pct, step) => { s.renderPct = pct; UQ.ui.progress.set(pct, step); this.renderExportPanel(); },
       onError: err => {
         UQ.ui.progress.close();

@@ -18,6 +18,7 @@ import { upload } from '../lib/upload.js';
 import { buildAss } from '../lib/ass.js';
 import { probe, burnCaptions } from '../lib/ffmpeg.js';
 import { createJob, getJob, updateJob, publicJob } from '../lib/jobs.js';
+import { getUserPlan } from '../lib/credits.js';
 import { dirs } from '../config.js';
 
 export const renderRouter = Router();
@@ -83,12 +84,20 @@ async function runRender(jobId, { payload, media }) {
   const width = media.width || 1080;
   const height = media.height || 1920;
 
+  /* Server-verified, not client-declared — see getUserPlan()'s own note.
+     A missing/unrecognised plan (no uid sent, Admin not configured, no
+     such user) fails safe as Free: watermark stays on. */
+  const plan = await getUserPlan(payload.uid);
+  const watermark = plan !== 'Starter' && plan !== 'Creator' && plan !== 'Studio';
+
   const { content, events } = buildAss({
     lines: payload.lines,
     style: payload.style,
     template: payload.template,
     width,
-    height
+    height,
+    duration: media.duration,
+    watermark
   });
   if (!events) throw new Error('No caption events to burn — the lines were empty.');
 

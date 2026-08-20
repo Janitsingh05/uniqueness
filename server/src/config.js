@@ -35,8 +35,10 @@ export const config = {
     /* Leave unset to use whatever is on PATH. */
     bin: process.env.FFMPEG_PATH || 'ffmpeg',
     probeBin: process.env.FFPROBE_PATH || 'ffprobe',
-    /* x264 speed/size trade-off for the burn-in. */
-    preset: process.env.FFMPEG_PRESET || 'veryfast',
+    /* x264 speed/size trade-off for the burn-in. ultrafast over veryfast —
+       the free Render tier's CPU is the bottleneck, not file size, and for
+       short social clips the size difference is a few hundred KB. */
+    preset: process.env.FFMPEG_PRESET || 'ultrafast',
     crf: num(process.env.FFMPEG_CRF, 20)
   },
 

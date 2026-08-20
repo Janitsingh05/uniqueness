@@ -33,4 +33,4 @@ services:
       - key: WORK_DIR
         value: /tmp/uniqueness
       - key: FFMPEG_PRESET
-        value: veryfast
+        value: ultrafast   # free tier's CPU is the bottleneck, not output size

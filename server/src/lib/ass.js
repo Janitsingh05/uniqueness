@@ -12,6 +12,8 @@
    and 'type' reveals the line as it is spoken.
    ============================================================ */
 
+import { toHinglish } from './transliterate.js';
+
 /* ASS wants &HAABBGGRR — alpha first, then blue/green/red. */
 function assColor(hex, alpha = '00') {
   const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
@@ -62,6 +64,15 @@ function wordTimes(line) {
 }
 
 export function buildAss({ lines, style, width, height, template }) {
+  /* Safety net: libass on the render machine has no Devanagari glyphs, so
+     any Hindi that reaches here as Devanagari would burn in as empty boxes.
+     The editor already converts fresh transcripts to Hinglish, but a
+     project saved before that existed still has the old script — catch it
+     here too. No-op for text that's already Hinglish. */
+  lines = (lines || []).map(line => (line && Array.isArray(line.words))
+    ? { ...line, words: line.words.map(w => toHinglish(w)) }
+    : line);
+
   const mode = template?.mode || 'line';
   const tplId = template?.id || style.tpl;
 

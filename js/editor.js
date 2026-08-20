@@ -64,8 +64,14 @@ UQ.editor = {
       if (p) {
         this.state.projectId = p.id;
         this.state.filename = p.name;
-        this.state.transcript = p.transcript;
-        this.state.draft = p.transcript;
+        /* Projects saved before Hindi auto-converted to Hinglish still have
+           raw Devanagari — romanize on load too, else it burns in as empty
+           boxes on export (libass has no Devanagari glyphs). No timedWords
+           are saved with a project, so this is the whole-text path either
+           way, same as it already was for a saved project's timing. */
+        const hi = this.hinglishify(p.transcript, null);
+        this.state.transcript = hi ? hi.text : p.transcript;
+        this.state.draft = this.state.transcript;
         this.state.style.tpl = p.tpl;
         this.state.style.ratio = p.ratio;
       }

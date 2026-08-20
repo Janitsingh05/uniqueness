@@ -69,7 +69,12 @@ export const config = {
     keyId: process.env.RAZORPAY_KEY_ID || '',
     keySecret: process.env.RAZORPAY_KEY_SECRET || '',
     webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || ''
-  }
+  },
+
+  /* Mirrors js/config.js's referral.sharePercent — this copy is the one
+     that actually pays it out (lib/credits.js creditReferral), the
+     client's is only for its own display math. Keep them equal by hand. */
+  referral: { sharePercent: num(process.env.REFERRAL_SHARE_PERCENT, 20) }
 };
 
 export const dirs = {

@@ -134,8 +134,10 @@ UQ.config = {
     { q: 'Is my clip uploaded to a server?', a: 'Voice sync and captioning run in your browser by default and never leave your device. Signing in also unlocks higher-accuracy server-side transcription and real burned-in MP4 exports when you want them.' }
   ],
 
-  /* Referral economics. */
-  referral: { freeMinutesForFriend: 30, sharePercent: 20, payoutPerConversion: 240, minPayout: 500 },
+  /* Referral economics. sharePercent must match server/src/config.js's
+     same field — the server is what actually pays it out, this copy is
+     only for the page's own display math (minPayout gate, etc). */
+  referral: { freeMinutesForFriend: 30, sharePercent: 20, minPayout: 500 },
 
   /* Editor plugin roadmap. */
   integrations: [

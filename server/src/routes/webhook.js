@@ -22,7 +22,7 @@ import { Router } from 'express';
 import express from 'express';
 import { verifyWebhookSignature } from '../lib/razorpay.js';
 import { planByRazorpayId, lookupPlan } from '../lib/plans.js';
-import { creditUser, findUserBySubscriptionId, logSubscriptionEvent } from '../lib/credits.js';
+import { creditUser, creditReferral, findUserBySubscriptionId, logSubscriptionEvent } from '../lib/credits.js';
 import { config } from '../config.js';
 
 export const webhookRouter = Router();
@@ -87,6 +87,9 @@ async function handleEvent(event) {
       paymentId: payment.id
     });
     console.log('[webhook] credited', user.id, result);
+
+    const refResult = await creditReferral(user.id, { amount: plan.amount, paymentId: payment.id });
+    console.log('[webhook] referral', user.id, refResult);
     return;
   }
 
@@ -138,5 +141,8 @@ async function handleEvent(event) {
       paymentId: payment.id
     });
     console.log('[webhook] backstop-credited', notes.uid, result);
+
+    const refResult = await creditReferral(notes.uid, { amount: plan.amount, paymentId: payment.id });
+    console.log('[webhook] backstop-referral', notes.uid, refResult);
   }
 }

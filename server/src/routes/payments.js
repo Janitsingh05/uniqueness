@@ -21,7 +21,7 @@ import {
   paymentsConfigured
 } from '../lib/razorpay.js';
 import { lookupPlan } from '../lib/plans.js';
-import { creditUser, attachSubscriptionId } from '../lib/credits.js';
+import { creditUser, creditReferral, attachSubscriptionId } from '../lib/credits.js';
 import { config } from '../config.js';
 
 export const paymentsRouter = Router();
@@ -142,6 +142,12 @@ paymentsRouter.post('/payments/verify', async (req, res) => {
       source: 'verify',
       paymentId: razorpay_payment_id
     }).catch(err => ({ ok: false, reason: err.message }));
+
+    /* Independent of whether our own minute-crediting above succeeded —
+       the payment itself is what's verified, and that's what the referral
+       reward is for. */
+    await creditReferral(body.uid, { amount: plan.amount, paymentId: razorpay_payment_id })
+      .catch(err => console.error('[payments] creditReferral', err.message));
   }
 
   res.json({ verified: true, billing, tier, plan: plan.name, credited });

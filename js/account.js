@@ -5,22 +5,31 @@
 
 window.UQ = window.UQ || {};
 
-/* ---------------- Refer & earn ---------------- */
+/* ---------------- Refer & earn ----------------
+   referralAvailable/referralEarned live on the user doc in paise, written
+   only by the server (server/src/lib/credits.js creditReferral) the moment
+   a Razorpay payment from someone this account referred is signature-
+   verified — firestore.rules blocks writing those two fields from the
+   client entirely. Nothing here computes or trusts an earned amount on
+   its own; this page only ever displays what the server already decided. */
 UQ.refer = {
-  init() {
+  async init() {
     const user = UQ.shell.mount('refer', 'Refer & earn');
     if (!user) return;
     const cfg = UQ.config.referral;
     const link = 'https://' + UQ.config.brand.domain + '/?r=' + user.code;
     const refs = UQ.db.referrals(user.code);
-    const paid = refs.filter(r => r.plan !== 'Free').length;
-    const earned = paid * cfg.payoutPerConversion;
+    const converted = refs.filter(r => r.converted).length;
+    const availablePaise = Number(user.referralAvailable) || 0;
+    const earnedPaise = Number(user.referralEarned) || 0;
+    const available = Math.round(availablePaise / 100);
+    const earned = Math.round(earnedPaise / 100);
 
     UQ.ui.el('#refLink').value = link;
     UQ.ui.el('#refCode').textContent = user.code;
     UQ.ui.el('#mJoined').textContent = refs.length;
-    UQ.ui.el('#mPaid').textContent = paid;
-    UQ.ui.el('#mAvailable').textContent = UQ.ui.money(earned);
+    UQ.ui.el('#mPaid').textContent = converted;
+    UQ.ui.el('#mAvailable').textContent = UQ.ui.money(available);
     UQ.ui.el('#mLifetime').textContent = UQ.ui.money(earned);
 
     UQ.ui.el('#copyLink').addEventListener('click', async e => {
@@ -31,11 +40,31 @@ UQ.refer = {
     });
 
     const payout = UQ.ui.el('#payoutBtn');
-    payout.textContent = earned >= cfg.minPayout ? 'Request ' + UQ.ui.money(earned) : 'Nothing to withdraw yet';
-    payout.addEventListener('click', () => {
-      if (earned < cfg.minPayout) return UQ.ui.toast('Minimum payout is ' + UQ.ui.money(cfg.minPayout));
-      payout.textContent = 'Requested ✓ — clears in 3 days';
+    const setIdle = () => { payout.textContent = available >= cfg.minPayout ? 'Request ' + UQ.ui.money(available) : 'Nothing to withdraw yet'; };
+    setIdle();
+
+    let pending = null;
+    try { pending = await UQ.db.pendingPayoutRequest(user.id); } catch (err) {}
+    if (pending) {
+      payout.textContent = UQ.ui.money(Math.round((Number(pending.amount) || 0) / 100)) + ' requested — clears in 3 days';
       payout.classList.add('btn--done');
+      payout.disabled = true;
+    }
+
+    payout.addEventListener('click', async () => {
+      if (payout.disabled) return;
+      if (available < cfg.minPayout) return UQ.ui.toast('Minimum payout is ' + UQ.ui.money(cfg.minPayout));
+      payout.disabled = true;
+      payout.textContent = 'Requesting…';
+      try {
+        await UQ.db.requestPayout(user.id, availablePaise);
+        payout.textContent = UQ.ui.money(available) + ' requested — clears in 3 days';
+        payout.classList.add('btn--done');
+      } catch (err) {
+        payout.disabled = false;
+        setIdle();
+        UQ.ui.toast(err.message || 'Could not submit the payout request.');
+      }
     });
   }
 };

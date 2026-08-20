@@ -404,6 +404,31 @@ UQ.db = {
     if (this.mode === 'firebase') return this._referrals;
     if (!code) return [];
     return Object.values(this.read().users).filter(u => u.referredBy === code);
+  },
+
+  /* ---------- payouts ----------
+     referralAvailable/referralEarned only ever move server-side (a
+     signature-verified Razorpay payment, see server/src/lib/credits.js
+     creditReferral) — firestore.rules blocks writing them from here.
+     A payout request just asks to be paid; nothing moves automatically,
+     it's reviewed and marked paid by hand. */
+  async requestPayout(userId, amount) {
+    if (this.mode !== 'firebase') throw new Error('Payouts need Firebase to be connected.');
+    const id = this.uid('pay');
+    await this._fs.collection('payoutRequests').doc(id).set({
+      uid: userId, amount, status: 'requested', requestedAt: Date.now()
+    });
+    return id;
+  },
+  /* Whether one is already sitting unpaid, so the page can show "already
+     pending" instead of letting someone queue up duplicates. No orderBy
+     on purpose — two equality filters need no composite index, adding a
+     third field to sort by would. */
+  async pendingPayoutRequest(userId) {
+    if (this.mode !== 'firebase') return null;
+    const snap = await this._fs.collection('payoutRequests')
+      .where('uid', '==', userId).where('status', '==', 'requested').limit(1).get();
+    return snap.empty ? null : Object.assign({ id: snap.docs[0].id }, snap.docs[0].data());
   }
 };
 

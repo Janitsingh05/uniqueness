@@ -11,8 +11,16 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read, update, delete: if isSelf(userId);
+      allow read: if isSelf(userId);
       allow create: if isSelf(userId);
+      allow delete: if isSelf(userId);
+      /* referralAvailable/referralEarned are money — only the server (via
+         Firebase Admin, which bypasses rules entirely) writes them, when a
+         Razorpay payment has actually been signature-verified. Without this,
+         anyone signed in could just set their own balance from devtools. */
+      allow update: if isSelf(userId)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+             .hasAny(['referralAvailable', 'referralEarned']);
 
       match /projects/{projectId} {
         allow read, write: if isSelf(userId);
@@ -39,6 +47,21 @@ service cloud.firestore {
       allow create: if signedIn() && request.auth.uid == memberId;
       allow read: if signedIn()
         && get(/databases/$(database)/documents/codes/$(code)).data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    /* A referrer asking to be paid out. Creating a request never moves
+       money by itself — capped here at their all-time referralEarned as a
+       sanity bound, then reviewed and marked paid by hand (only the Admin
+       SDK, which bypasses these rules, can change status afterward). */
+    match /payoutRequests/{requestId} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'requested'
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0
+        && request.resource.data.amount <= get(/databases/$(database)/documents/users/$(request.auth.uid)).data.referralEarned;
       allow update, delete: if false;
     }
   }

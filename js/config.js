@@ -137,7 +137,7 @@ UQ.config = {
   /* Referral economics. sharePercent must match server/src/config.js's
      same field — the server is what actually pays it out, this copy is
      only for the page's own display math (minPayout gate, etc). */
-  referral: { freeMinutesForFriend: 30, sharePercent: 20, minPayout: 100 },
+  referral: { freeMinutesForFriend: 6, sharePercent: 20, minPayout: 100 },
 
   /* Editor plugin roadmap. */
   integrations: [

@@ -14,13 +14,25 @@ service cloud.firestore {
       allow read: if isSelf(userId);
       allow create: if isSelf(userId);
       allow delete: if isSelf(userId);
-      /* referralAvailable/referralEarned are money — only the server (via
-         Firebase Admin, which bypasses rules entirely) writes them, when a
-         Razorpay payment has actually been signature-verified. Without this,
-         anyone signed in could just set their own balance from devtools. */
+      /* Everything money/identity-adjacent about referrals is frozen after
+         create — a client can set these once at signup and never again:
+           referralAvailable/referralEarned — only the server (Admin SDK,
+             which bypasses rules) writes these, gated on a signature-
+             verified Razorpay payment. Without this, anyone signed in
+             could just set their own balance from devtools.
+           referredBy — set once, at signup, from the ?r= link. Without
+             this lock, an existing account could attach itself to a
+             referral code *after the fact*, timed right before a
+             purchase, to redirect that purchase's commission to an
+             account of the buyer's own choosing.
+           code — this account's own referral code. The codes/{code}
+             mapping below is the actual source of truth for who a code
+             pays, so this can't be used to hijack someone else's
+             traffic, but locking it removes a pointless way to break
+             your own referral link. */
       allow update: if isSelf(userId)
         && !request.resource.data.diff(resource.data).affectedKeys()
-             .hasAny(['referralAvailable', 'referralEarned']);
+             .hasAny(['referralAvailable', 'referralEarned', 'referredBy', 'code']);
 
       match /projects/{projectId} {
         allow read, write: if isSelf(userId);
@@ -50,18 +62,24 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    /* A referrer asking to be paid out. Creating a request never moves
-       money by itself — capped here at their all-time referralEarned as a
-       sanity bound, then reviewed and marked paid by hand (only the Admin
-       SDK, which bypasses these rules, can change status afterward). */
-    match /payoutRequests/{requestId} {
-      allow read: if signedIn() && resource.data.uid == request.auth.uid;
-      allow create: if signedIn()
-        && request.resource.data.uid == request.auth.uid
+    /* A referrer asking to be paid out. Doc id is the requester's own uid
+       (not an auto id) so "one pending request at a time" is a database
+       guarantee, not just a UI courtesy — creating is only possible while
+       no doc already sits at that path, so a client calling the SDK
+       directly (bypassing the page's own disabled-button check) still
+       cannot queue up duplicates. Creating a request never moves money by
+       itself — capped here at their all-time referralEarned as a sanity
+       bound, then reviewed and paid by hand; the admin deletes the doc
+       (Admin SDK bypasses these rules) once it's paid, which is what
+       frees this uid to request again later. */
+    match /payoutRequests/{userId} {
+      allow read: if isSelf(userId);
+      allow create: if isSelf(userId)
+        && request.resource.data.uid == userId
         && request.resource.data.status == 'requested'
         && request.resource.data.amount is number
         && request.resource.data.amount > 0
-        && request.resource.data.amount <= get(/databases/$(database)/documents/users/$(request.auth.uid)).data.referralEarned;
+        && request.resource.data.amount <= get(/databases/$(database)/documents/users/$(userId)).data.referralEarned;
       allow update, delete: if false;
     }
   }

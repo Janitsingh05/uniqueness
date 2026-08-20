@@ -164,7 +164,7 @@ UQ.credits = {
       method: this.method
     });
     UQ.db.addEvent(this.user.id, {
-      icon: '✦',
+      icon: '◆',
       tone: 'teal',
       text: plan.name + ' activated — ' + ((plan.unlimited || plan.add < 0) ? 'unlimited captions' : (mins + ' minutes added'))
     });

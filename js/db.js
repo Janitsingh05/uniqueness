@@ -245,6 +245,7 @@ UQ.db = {
       const profile = {
         name,
         email: (cred.user.email || '').toLowerCase(),
+        photoURL: cred.user.photoURL || null,
         minutes: referredBy ? (UQ.config.referral.freeMinutesForFriend || UQ.config.freeMinutes) : UQ.config.freeMinutes,
         plan: 'Free',
         code,
@@ -264,6 +265,10 @@ UQ.db = {
           });
         } catch (e) {}
       }
+    } else if (cred.user.photoURL && snap.data().photoURL !== cred.user.photoURL) {
+      /* Backfill/refresh for accounts created before avatars were stored,
+         and pick up a changed Google photo on any later sign-in. */
+      await this._fs.collection('users').doc(uid).update({ photoURL: cred.user.photoURL }).catch(() => {});
     }
     await this._hydrate(uid);
     return { user: this._user, isNew };

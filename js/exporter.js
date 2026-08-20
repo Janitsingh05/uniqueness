@@ -13,7 +13,7 @@
 window.UQ = window.UQ || {};
 
 UQ.exporter = {
-  STEPS: ['Preparing frames', 'Burning in captions', 'Encoding video', 'Finishing up'],
+  STEPS: ['Getting your video ready', 'Adding your captions', 'Rendering the final video', 'Almost there'],
 
   stamp(t, comma) {
     const h = String(Math.floor(t / 3600)).padStart(2, '0');

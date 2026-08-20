@@ -127,7 +127,8 @@ UQ.api = {
       text: (data && data.text) || '',
       timedWords: (data && data.words) || [],
       duration: (data && data.duration) || 0,
-      note: (data && data.note) || ''
+      note: (data && data.note) || '',
+      language: (data && data.language) || ''
     };
   },
 

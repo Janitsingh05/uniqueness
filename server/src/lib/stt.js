@@ -16,13 +16,40 @@ import path from 'node:path';
 import { config } from '../config.js';
 import { extractAudio, splitAudio, probe } from './ffmpeg.js';
 
-/* Whisper takes a plain language name or ISO code; the studio's picker
-   uses friendly labels. */
+/* Whisper takes a plain language name or ISO-639-1 code; the studio's
+   picker uses friendly labels (js/config.js's speechLangs — keep both
+   lists in sync). Whisper-large-v3 auto-detects among ~99 languages on
+   its own, so Auto-detect already covers languages not listed here;
+   an explicit code mainly helps short or accented clips. */
 const LANGS = {
   'Auto-detect': undefined,
   English: 'en',
   Hindi: 'hi',
-  Hinglish: 'hi'
+  Hinglish: 'hi',
+  Marathi: 'mr',
+  Punjabi: 'pa',
+  Bengali: 'bn',
+  Tamil: 'ta',
+  Telugu: 'te',
+  Gujarati: 'gu',
+  Kannada: 'kn',
+  Malayalam: 'ml',
+  Urdu: 'ur',
+  Odia: 'or',
+  Nepali: 'ne',
+  Spanish: 'es',
+  French: 'fr',
+  German: 'de',
+  Portuguese: 'pt',
+  Arabic: 'ar',
+  Chinese: 'zh',
+  Japanese: 'ja',
+  Korean: 'ko',
+  Russian: 'ru',
+  Indonesian: 'id',
+  Turkish: 'tr',
+  Italian: 'it',
+  Vietnamese: 'vi'
 };
 
 async function callProvider(filePath, { language, prompt } = {}) {
@@ -111,6 +138,7 @@ export async function transcribe(videoPath, opts = {}) {
   const lang = LANGS[language] ?? (language || undefined);
   const words = [];
   const texts = [];
+  let detectedLang = '';
 
   for (let i = 0; i < pieces.length; i++) {
     const pct = 25 + Math.round((i / pieces.length) * 65);
@@ -126,6 +154,7 @@ export async function transcribe(videoPath, opts = {}) {
     });
 
     if (result.text) texts.push(String(result.text).trim());
+    if (!detectedLang && result.language) detectedLang = result.language;
     words.push(...normaliseWords(result, pieces[i].offset));
   }
 
@@ -142,6 +171,11 @@ export async function transcribe(videoPath, opts = {}) {
     text: text || words.map(w => w.text).join(' '),
     words,
     duration: media.duration,
-    chunks: pieces.length
+    chunks: pieces.length,
+    /* Whisper's own detected language (ISO-639-1, e.g. 'hi'), whether or
+       not one was requested — lets the client romanize Hindi specifically
+       without also catching Marathi/Nepali/Sanskrit, which share the same
+       Devanagari script but shouldn't be forced into Hinglish spelling. */
+    language: detectedLang || ''
   };
 }

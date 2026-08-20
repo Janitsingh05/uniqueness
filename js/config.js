@@ -50,7 +50,7 @@ UQ.config = {
   defaultStyle: {
     tpl: 'punch',
     font: 'jakarta',
-    size: 8,              // % of stage height
+    size: 5,               // % of stage height — starts small, drag/slider to grow
     pos: 16,              // % from the bottom
     color: '#FFFFFF',
     hl: '#A78BFA',
@@ -181,10 +181,22 @@ UQ.config = {
     transcribeTimeoutMs: 900000
   },
 
-  /* Speech-to-text language codes.
-     Uses Google Chrome / Edge Web Speech API (free, no key).
-     That API is powered by Google's speech recogniser in-browser. */
-  speechLangs: { 'Auto-detect': 'en-IN', English: 'en-IN', Hindi: 'hi-IN', Hinglish: 'hi-IN' },
+  /* Speech-to-text language codes, for the mic-dictation picker (BCP-47,
+     Chrome/Edge's built-in Web Speech API — free, no key). The file-upload
+     path auto-caption uses is separate (server Whisper, ISO-639-1 codes in
+     server/src/lib/stt.js) and understands the same names — keep both
+     lists in sync when adding a language. Auto-detect always wins for
+     accuracy on file uploads since Whisper genuinely detects the spoken
+     language; an explicit pick here mainly helps live mic dictation and
+     short/accented clips where auto-detect can guess wrong. */
+  speechLangs: {
+    'Auto-detect': 'en-IN', English: 'en-IN', Hindi: 'hi-IN', Hinglish: 'hi-IN',
+    Marathi: 'mr-IN', Punjabi: 'pa-IN', Bengali: 'bn-IN', Tamil: 'ta-IN', Telugu: 'te-IN',
+    Gujarati: 'gu-IN', Kannada: 'kn-IN', Malayalam: 'ml-IN', Urdu: 'ur-IN', Odia: 'or-IN', Nepali: 'ne-NP',
+    Spanish: 'es-ES', French: 'fr-FR', German: 'de-DE', Portuguese: 'pt-BR', Arabic: 'ar-SA',
+    Chinese: 'zh-CN', Japanese: 'ja-JP', Korean: 'ko-KR', Russian: 'ru-RU',
+    Indonesian: 'id-ID', Turkish: 'tr-TR', Italian: 'it-IT', Vietnamese: 'vi-VN'
+  },
 
   /* Caption translation targets — server/src/lib/translate.js (MyMemory,
      free, no key). Codes are the ISO pairs MyMemory expects. */

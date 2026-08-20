@@ -85,7 +85,7 @@ UQ.settings = {
       '<div class="setting__desc">' + r.desc + '</div></div>' +
       '<button class="switch' + (this.values[r.key] ? ' is-on' : '') + '" data-key="' + r.key + '"><span></span></button></div>').join('') +
       '<div class="setting"><div class="grow"><div class="setting__name">Transcription language</div>' +
-      '<div class="setting__desc">Auto-detect handles English, Hindi and Hinglish.</div></div>' +
+      '<div class="setting__desc">Auto-detect recognises the language on its own — Hindi audio is captioned in Hinglish automatically. Only pick one below if a clip needs a hint.</div></div>' +
       '<select class="select" id="langSelect" style="width:auto">' +
       Object.keys(UQ.config.speechLangs).map(l => '<option' + (l === this.values.lang ? ' selected' : '') + '>' + l + '</option>').join('') +
       '</select></div>';

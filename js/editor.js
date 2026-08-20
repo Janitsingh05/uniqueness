@@ -126,6 +126,48 @@ UQ.editor = {
       UQ.ui.els('[data-ratio]').forEach(x => x.classList.toggle('is-on', x === b));
     }));
     UQ.ui.els('[data-tab]').forEach(b => b.addEventListener('click', () => this.setTab(b.dataset.tab)));
+    this.bindCapResize();
+  },
+
+  /* Drag the handle on the caption preview to resize it — mouse on desktop,
+     finger on mobile, same code path either way via Pointer Events. Mirrors
+     the size slider exactly (same clamp, same style key) so the two stay
+     interchangeable. */
+  bindCapResize() {
+    const handle = UQ.ui.el('#capResize');
+    if (!handle) return;
+    const s = this.state;
+    const range = UQ.ui.el('#sizeRange');
+    const min = parseFloat(range.min), max = parseFloat(range.max);
+    let startY = 0, startSize = 0, stageH = 0;
+
+    const move = e => {
+      const deltaSize = ((e.clientY - startY) / Math.max(1, stageH)) * 40;
+      s.style.size = Math.max(min, Math.min(max, startSize + deltaSize));
+      this.recompute();
+      this.renderStage();
+      this.renderStylePanel();
+      this.renderTransport();
+      this.paintFrame(true);
+    };
+    const up = e => {
+      handle.classList.remove('is-dragging');
+      handle.releasePointerCapture(e.pointerId);
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', up);
+      handle.removeEventListener('pointercancel', up);
+    };
+    handle.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      startY = e.clientY;
+      startSize = s.style.size;
+      stageH = this.stage.getBoundingClientRect().height;
+      handle.classList.add('is-dragging');
+      handle.setPointerCapture(e.pointerId);
+      handle.addEventListener('pointermove', move);
+      handle.addEventListener('pointerup', up);
+      handle.addEventListener('pointercancel', up);
+    });
   },
 
   setTab(tab) {
@@ -281,9 +323,18 @@ UQ.editor = {
          default) — if it also comes up empty, that is worth keeping in
          view rather than burying the real reason under a generic note. */
       if (result.text) {
-        s.transcript = result.text;
-        s.draft = result.text;
-        s.timedWords = result.timedWords && result.timedWords.length ? result.timedWords : null;
+        const timed = result.timedWords && result.timedWords.length ? result.timedWords : null;
+        /* Hindi is romanized to Hinglish immediately — no separate click.
+           Other Devanagari-script languages (Marathi, Nepali, Sanskrit)
+           share the same Unicode block but read differently, so this only
+           fires on Whisper's own detected language when the server reports
+           one; the browser-Whisper fallback has no such signal and falls
+           back to converting any Devanagari it sees, same as before. */
+        const isHindi = result.language ? result.language === 'hi' : true;
+        const hi = isHindi ? this.hinglishify(result.text, timed) : null;
+        s.transcript = hi ? hi.text : result.text;
+        s.draft = s.transcript;
+        s.timedWords = hi ? hi.timedWords : timed;
         s.note = serverFailNote ? serverFailNote + ' ' + result.note : result.note;
       } else {
         s.note = (serverFailNote ? serverFailNote + ' ' : '') + (result.note || voice.note);
@@ -359,7 +410,7 @@ UQ.editor = {
     if (!s.file) { s.note = 'Load a clip first — then this locks the caption timing to its voice.'; this.renderSyncCard(); return; }
     if (s.analysing) return;
     s.analysing = true;
-    UQ.ui.progress.open('Syncing to voice', 'Detecting speech and locking caption timing.', UQ.audioSync.STEPS);
+    UQ.ui.progress.open('Syncing to your voice', 'Finding exactly when each word is spoken.', UQ.audioSync.STEPS);
     const result = await UQ.audioSync.analyse(s.file, {
       sensitivity: s.sensitivity,
       onProgress: (pct, step) => UQ.ui.progress.set(pct, step)
@@ -401,7 +452,9 @@ UQ.editor = {
         s.live = state === 'listening' ? s.live : '';
         this.renderSyncCard();
         if (state === 'stopped') {
-          s.draft = s.transcript;
+          const hi = this.hinglishify(s.transcript, null);
+          if (hi) { s.transcript = hi.text; s.draft = hi.text; }
+          else s.draft = s.transcript;
           this.setTab('text');
           this.renderTextPanel();
           const ta = UQ.ui.el('#transcript');
@@ -439,38 +492,46 @@ UQ.editor = {
     this._scriptTimer = setTimeout(() => this.softResyncFromScript(), 850);
   },
 
-  /* Devanagari script -> Hinglish (Roman). Relabels each already-timed word
-     in place rather than routing through onScriptEdit()'s re-fit/re-analyse
-     pipeline — transliteration never changes word count or order, so the
-     original per-word timing (Whisper's, if this came from auto-caption)
-     stays exactly right. Re-fitting it instead was silently downgrading
-     precise word-level timestamps to a coarser voice-energy estimate on
-     every conversion, which is what "script matching" breaking looked like. */
+  /* Devanagari script -> Hinglish (Roman), text and (if given) timedWords
+     kept in exact lockstep. Relabels each already-timed word in place
+     instead of a whole-string convert-then-re-fit — transliteration never
+     changes word count or order, so the original per-word timing
+     (Whisper's, if this came from auto-caption) stays exactly right. A
+     naive re-fit was silently downgrading precise word-level timestamps to
+     a coarser voice-energy estimate on every conversion. Returns null when
+     there is no Devanagari to convert. */
+  hinglishify(text, timedWords) {
+    if (!text || !/[ऀ-ॿ]/.test(text)) return null;
+    if (timedWords && timedWords.length) {
+      const relabeled = timedWords.map(w => Object.assign({}, w, { text: UQ.transliterate.wordToRoman(w.text) }));
+      return { text: relabeled.map(w => w.text).join(' '), timedWords: relabeled };
+    }
+    return { text: UQ.transliterate.toHinglish(text), timedWords: timedWords || null };
+  },
+
+  /* Manual button next to "Re-match to voice" — mainly for Devanagari typed
+     or pasted straight into the script box, since auto-caption and dictation
+     already convert automatically as soon as a transcript comes in. */
   convertToHinglish() {
     const s = this.state;
     const ta = UQ.ui.el('#transcript');
     const text = ta ? ta.value : (s.draft || s.transcript || '');
-    if (!/[ऀ-ॿ]/.test(text)) {
+    const converted = this.hinglishify(text, s.timedWords);
+    if (!converted) {
       UQ.ui.toast('No Hindi script here to convert');
       return;
     }
 
-    if (s.timedWords && s.timedWords.length) {
-      s.timedWords = s.timedWords.map(w => Object.assign({}, w, { text: UQ.transliterate.wordToRoman(w.text) }));
-      const converted = s.timedWords.map(w => w.text).join(' ');
-      s.draft = converted;
-      s.transcript = converted;
-      if (ta) ta.value = converted;
-      clearTimeout(this._scriptTimer);
-      this.recompute();
-      this.renderTransport();
-      this.renderSyncCard();
-      this._paintScriptMeta();
-      this.paintFrame(true);
-    } else {
-      ta.value = UQ.transliterate.toHinglish(text);
-      this.onScriptEdit();
-    }
+    s.draft = converted.text;
+    s.transcript = converted.text;
+    s.timedWords = converted.timedWords;
+    if (ta) ta.value = converted.text;
+    clearTimeout(this._scriptTimer);
+    this.recompute();
+    this.renderTransport();
+    this.renderSyncCard();
+    this._paintScriptMeta();
+    this.paintFrame(true);
     UQ.ui.toast('Converted to Hinglish');
   },
 
@@ -617,6 +678,7 @@ UQ.editor = {
     UQ.captions.applyStyle(this.stage, s.style);
     UQ.ui.el('#stageEmpty').classList.toggle('hidden', !!s.url);
     this.video.classList.toggle('hidden', !s.url);
+    UQ.ui.el('#capResize').classList.toggle('hidden', !s.url);
     UQ.ui.el('#safeBox').classList.toggle('hidden', !s.safe);
     UQ.ui.el('#watermark').classList.toggle('hidden', this.user.plan !== 'Free');
     UQ.ui.el('#safeBtn').classList.toggle('is-on', s.safe);
@@ -900,7 +962,7 @@ UQ.editor = {
     }
     s.rendering = true;
     s.renderUrl = null;
-    UQ.ui.progress.open('Rendering your video', 'Captions are being burned into the clip — you can keep this open.', UQ.exporter.STEPS);
+    UQ.ui.progress.open('Rendering your video', 'Your captions are being added to the video — you can keep this open.', UQ.exporter.STEPS);
 
     const tpl = UQ.config.templates.find(t => t.id === s.style.tpl) || UQ.config.templates[0];
     UQ.exporter.renderVideo({
@@ -927,7 +989,7 @@ UQ.editor = {
         s.renderUrl = (result && result.url) || null;
         s.renderName = (result && result.filename) || null;
         this.user = UQ.db.spendMinutes(this.user.id, minutes);
-        UQ.db.addEvent(this.user.id, { icon: '↓', tone: 'purple', text: 'Rendered a video — ' + minutes + ' min used' });
+        UQ.db.addEvent(this.user.id, { icon: '↓', tone: 'teal', text: 'Rendered a video — ' + minutes + ' min used' });
         UQ.shell.refresh('editor', 'Caption editor');
         this.renderExportPanel();
 

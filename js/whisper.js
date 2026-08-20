@@ -16,16 +16,19 @@ UQ.whisper = {
 
   STEPS: [
     'Reading your clip',
-    'Downloading speech model (one-time)',
+    'Getting ready to listen',
     'Listening to every word',
-    'Locking captions to the voice'
+    'Matching captions to your voice'
   ],
 
   langMap: {
     'Auto-detect': null,
-    English: 'english',
-    Hindi: 'hindi',
-    Hinglish: 'hindi'
+    English: 'english', Hindi: 'hindi', Hinglish: 'hindi',
+    Marathi: 'marathi', Punjabi: 'punjabi', Bengali: 'bengali', Tamil: 'tamil', Telugu: 'telugu',
+    Gujarati: 'gujarati', Kannada: 'kannada', Malayalam: 'malayalam', Urdu: 'urdu', Nepali: 'nepali',
+    Spanish: 'spanish', French: 'french', German: 'german', Portuguese: 'portuguese', Arabic: 'arabic',
+    Chinese: 'chinese', Japanese: 'japanese', Korean: 'korean', Russian: 'russian',
+    Indonesian: 'indonesian', Turkish: 'turkish', Italian: 'italian', Vietnamese: 'vietnamese'
   },
 
   cfg() {

@@ -50,8 +50,7 @@ UQ.dashboard = {
     const stats = [
       { icon: '◔', tone: '', label: 'Minutes left', value: u.minutes, note: u.plan + ' plan credit' },
       { icon: '▤', tone: 'teal', label: 'Projects', value: projects.length, note: projects.length ? 'Saved on this account' : 'Nothing saved yet' },
-      { icon: '◨', tone: '', label: 'Caption styles', value: UQ.config.templates.length, note: 'All unlocked on every plan' },
-      { icon: '✦', tone: 'teal', label: 'Watermark', value: u.plan === 'Free' ? 'On' : 'Off', note: u.plan === 'Free' ? 'Removed by any credit pack' : 'Clean exports up to 4K' }
+      { icon: '◨', tone: '', label: 'Caption styles', value: UQ.config.templates.length, note: 'All unlocked on every plan' }
     ];
     UQ.ui.el('#stats').innerHTML = stats.map(s =>
       '<div class="card stat">' +

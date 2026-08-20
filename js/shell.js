@@ -64,7 +64,7 @@ UQ.shell = {
           '<a class="btn btn--primary btn--block btn--sm" href="credits.html">Top up minutes</a>' +
         '</div>' +
         '<div class="who">' +
-          '<div class="avatar" style="width:32px;height:32px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;font-size:12.5px;font-weight:700;flex-shrink:0">' + this.initial() + '</div>' +
+          this.avatarHtml(32) +
           '<div class="grow"><div style="font-size:12.5px;font-weight:700">' + UQ.ui.esc(u.name) + '</div>' +
             '<div class="who__mail">' + UQ.ui.esc(u.email) + '</div></div>' +
           '<button data-signout title="Sign out" style="color:var(--faint);font-size:13px">⏻</button>' +
@@ -98,7 +98,7 @@ UQ.shell = {
       '<a href="credits.html" style="display:flex;align-items:center;gap:8px;padding:7px 13px;border:1px solid #E7E3F8;border-radius:99px;background:#F7F3FF">' +
         '<span style="color:var(--purple);font-size:11px">✦</span>' +
         '<span style="font-size:12px;font-weight:700;color:var(--purple-deep)">' + u.minutes + ' min</span></a>' +
-      '<div style="width:34px;height:34px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700">' + this.initial() + '</div>';
+      this.avatarHtml(34);
 
     host.querySelector('[data-burger]').addEventListener('click', () => this.openMenu());
 
@@ -111,6 +111,26 @@ UQ.shell = {
   },
 
   initial() { return (this.user && this.user.name ? this.user.name.trim().charAt(0) : 'U').toUpperCase(); },
+
+  /* Google's profile photo when signed in that way and it loaded; the
+     plain letter circle otherwise — same as before this existed. */
+  avatarHtml(size) {
+    const url = this.user && this.user.photoURL;
+    if (!url) return this._letterAvatarHtml(size);
+    return '<img src="' + UQ.ui.esc(url) + '" alt="" referrerpolicy="no-referrer" data-avatar-size="' + size + '" ' +
+      'style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;object-fit:cover;flex-shrink:0" ' +
+      'onerror="UQ.shell.onAvatarError(this)" />';
+  },
+  /* Broken/blocked photo URL (deleted account, offline, etc.) — swap back
+     to the letter circle rather than showing a broken-image icon. */
+  onAvatarError(img) {
+    img.outerHTML = this._letterAvatarHtml(Number(img.dataset.avatarSize) || 32);
+  },
+  _letterAvatarHtml(size) {
+    return '<div class="avatar" style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:var(--grad);' +
+      'color:#fff;display:grid;place-items:center;font-size:' + Math.round(size * 0.39) + 'px;font-weight:700;flex-shrink:0">' +
+      this.initial() + '</div>';
+  },
   openMenu() { UQ.ui.el('#sidebar').classList.add('is-open'); UQ.ui.el('.scrim').classList.add('is-open'); },
   closeMenu() { UQ.ui.el('#sidebar').classList.remove('is-open'); UQ.ui.el('.scrim').classList.remove('is-open'); }
 };

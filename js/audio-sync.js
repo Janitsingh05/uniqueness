@@ -12,7 +12,7 @@
 window.UQ = window.UQ || {};
 
 UQ.audioSync = {
-  STEPS: ['Reading the clip', 'Decoding the audio track', 'Detecting the voice', 'Aligning captions to speech'],
+  STEPS: ['Reading the clip', 'Listening for your voice', 'Finding where you speak', 'Matching captions to it'],
 
   sleep(ms) { return new Promise(r => setTimeout(r, ms)); },
 

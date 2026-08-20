@@ -32,6 +32,22 @@ UQ.refer = {
     UQ.ui.el('#mAvailable').textContent = UQ.ui.money(available);
     UQ.ui.el('#mLifetime').textContent = UQ.ui.money(earned);
 
+    /* Real names from referralHits/{code}/members — same doc creditReferral
+       marks converted:true on, so "Bought credits" here is the actual
+       server-verified event, not a guess. No email shown (kept off this
+       doc on purpose, see firestore.rules), but the name is usually enough
+       to recognise who joined through the link. */
+    const listHost = UQ.ui.el('#referralsList');
+    listHost.innerHTML = refs.length
+      ? refs.slice().sort((a, b) => (b.created || 0) - (a.created || 0)).map(r =>
+          '<div class="list-row"><span class="grow">' +
+            '<span class="list-row__name">' + UQ.ui.esc(r.name || 'Someone') + '</span>' +
+            '<span class="list-row__meta">Joined ' + UQ.ui.ago(r.created || Date.now()) + '</span></span>' +
+            '<span class="badge' + (r.converted ? ' badge--teal' : '') + '">' + (r.converted ? 'Bought credits' : 'Signed up') + '</span>' +
+          '</div>').join('')
+      : '<div class="empty"><div class="empty__title">No referrals yet</div>' +
+        '<div class="empty__body">Share your link above — signups show up here the moment they join.</div></div>';
+
     UQ.ui.el('#copyLink').addEventListener('click', async e => {
       try { await navigator.clipboard.writeText(link); } catch (err) {}
       e.currentTarget.textContent = 'Copied ✓';
@@ -138,3 +154,13 @@ UQ.settings = {
 
   save() { localStorage.setItem(this.KEY, JSON.stringify(this.values)); UQ.ui.toast('Settings saved'); }
 };
+
+/* One shared file, three pages — each page's own markup says which
+   controller it needs. Matches every other page's own
+   `UQ.start(() => UQ.xyz.init())` at the bottom of its controller file;
+   this file just can't hardcode which one, so it picks by DOM instead. */
+UQ.start(() => {
+  if (document.getElementById('refLink')) return UQ.refer.init();
+  if (document.getElementById('integrations')) return UQ.plugins.init();
+  if (document.getElementById('toggles')) return UQ.settings.init();
+});

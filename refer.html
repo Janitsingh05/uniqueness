@@ -46,6 +46,11 @@
         <div class="metric"><div class="metric__label">Lifetime earned</div><div class="metric__value" id="mLifetime">₹0</div></div>
       </div>
 
+      <section class="card" style="margin-bottom:16px;overflow:hidden">
+        <div class="card__head"><span class="card__title">Your referrals</span></div>
+        <div id="referralsList"></div>
+      </section>
+
       <div class="grid grid--split">
         <section class="card card--pad">
           <h3 style="font-size:13.5px;margin-bottom:12px">Request a payout</h3>
@@ -78,6 +83,5 @@
 <script defer src="js/ui.js"></script>
 <script defer src="js/shell.js"></script>
 <script defer src="js/account.js"></script>
-<script defer>UQ.start(() => UQ.refer.init());</script>
 </body>
 </html>

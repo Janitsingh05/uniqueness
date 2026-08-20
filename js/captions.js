@@ -294,15 +294,22 @@ UQ.captions = {
     if (!active) { capEl.innerHTML = ''; return; }
 
     const cased = s => (state.style.upper ? s.toUpperCase() : s);
+    // Typewriter needs progress across the WHOLE line, not the current word —
+    // active.progress resets to ~0 at the start of every word, which made the
+    // typed text jump back and re-type from near-scratch each word instead of
+    // advancing smoothly across the line.
+    const lineProgress = tpl.mode === 'type'
+      ? Math.min(.999, Math.max(0, (state.time - active.line.start) / Math.max(.001, active.line.end - active.line.start)))
+      : 0;
     const key = tpl.mode === 'type'
-      ? active.line.i + ':' + Math.ceil(active.progress * 40)
+      ? active.line.i + ':' + Math.ceil(lineProgress * 40)
       : active.line.i + ':' + active.index;
     if (capEl.dataset.key === key) return;
     capEl.dataset.key = key;
 
     if (tpl.mode === 'type') {
       const full = cased(active.line.words.join(' '));
-      const shown = full.slice(0, Math.ceil(active.progress * full.length));
+      const shown = full.slice(0, Math.ceil(lineProgress * full.length));
       capEl.innerHTML = '<span class="typed">' + UQ.ui.esc(shown) + '<span class="caret">|</span></span>';
     } else {
       const parts = active.line.words.map((w, i) => {

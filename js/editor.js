@@ -439,17 +439,38 @@ UQ.editor = {
     this._scriptTimer = setTimeout(() => this.softResyncFromScript(), 850);
   },
 
-  /* Devanagari script -> Hinglish (Roman), in place in the textarea, then
-     reuse the same live pipeline as typing so captions retime immediately. */
+  /* Devanagari script -> Hinglish (Roman). Relabels each already-timed word
+     in place rather than routing through onScriptEdit()'s re-fit/re-analyse
+     pipeline — transliteration never changes word count or order, so the
+     original per-word timing (Whisper's, if this came from auto-caption)
+     stays exactly right. Re-fitting it instead was silently downgrading
+     precise word-level timestamps to a coarser voice-energy estimate on
+     every conversion, which is what "script matching" breaking looked like. */
   convertToHinglish() {
+    const s = this.state;
     const ta = UQ.ui.el('#transcript');
-    const text = ta ? ta.value : '';
+    const text = ta ? ta.value : (s.draft || s.transcript || '');
     if (!/[ऀ-ॿ]/.test(text)) {
       UQ.ui.toast('No Hindi script here to convert');
       return;
     }
-    ta.value = UQ.transliterate.toHinglish(text);
-    this.onScriptEdit();
+
+    if (s.timedWords && s.timedWords.length) {
+      s.timedWords = s.timedWords.map(w => Object.assign({}, w, { text: UQ.transliterate.wordToRoman(w.text) }));
+      const converted = s.timedWords.map(w => w.text).join(' ');
+      s.draft = converted;
+      s.transcript = converted;
+      if (ta) ta.value = converted;
+      clearTimeout(this._scriptTimer);
+      this.recompute();
+      this.renderTransport();
+      this.renderSyncCard();
+      this._paintScriptMeta();
+      this.paintFrame(true);
+    } else {
+      ta.value = UQ.transliterate.toHinglish(text);
+      this.onScriptEdit();
+    }
     UQ.ui.toast('Converted to Hinglish');
   },
 

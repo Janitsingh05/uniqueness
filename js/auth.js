@@ -11,7 +11,10 @@ UQ.auth = {
     if (UQ.db.currentUser()) { location.href = 'dashboard.html'; return; }
     const params = new URLSearchParams(location.search);
     if (params.get('mode') === 'signup') this.mode = 'signup';
-    const ref = params.get('r');
+    /* The referral link points at the homepage, not straight here — see
+       landing.js's captureReferral() for why a stored code is checked
+       when this page's own URL has none. */
+    const ref = params.get('r') || localStorage.getItem('uq_ref_code');
     if (ref) this.presetRef = ref.toUpperCase();
 
     this.form = UQ.ui.el('#authForm');
@@ -69,6 +72,7 @@ UQ.auth = {
     try {
       if (this.mode === 'signup') {
         await UQ.db.signUp({ name, email, password: pw, referral });
+        localStorage.removeItem('uq_ref_code');
         location.href = 'credits.html?welcome=1';
       } else {
         await UQ.db.signIn(email, pw);
@@ -90,6 +94,7 @@ UQ.auth = {
 
     try {
       const { isNew } = await UQ.db.signInWithGoogle(this.presetRef);
+      if (isNew) localStorage.removeItem('uq_ref_code');
       location.href = isNew ? 'credits.html?welcome=1' : 'dashboard.html';
     } catch (err) {
       btn.classList.remove('btn--busy');

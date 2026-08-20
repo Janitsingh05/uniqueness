@@ -11,6 +11,7 @@ UQ.landing = {
   billing: 'monthly',
 
   init() {
+    this.captureReferral();
     this.renderStyles();
     this.renderCompare();
     this.renderPricing();
@@ -19,6 +20,19 @@ UQ.landing = {
     this.bindNav();
     this.bindReveal();
     this.bindCounters();
+  },
+
+  /* A refer-and-earn link points here (root domain + ?r=CODE), not
+     straight at login.html — a visitor lands on this page first, then
+     clicks through to actually sign up, and the query param does not
+     ride along with that click by itself. Stash it in localStorage so
+     it survives that navigation; login.html's auth.js reads it back if
+     the URL it landed on has no ?r= of its own. Cleared once actually
+     used for a signup (see auth.js), so it can't linger and attribute a
+     later, unrelated account on the same browser. */
+  captureReferral() {
+    const ref = new URLSearchParams(location.search).get('r');
+    if (ref) localStorage.setItem('uq_ref_code', ref.toUpperCase());
   },
 
   renderStyles() {

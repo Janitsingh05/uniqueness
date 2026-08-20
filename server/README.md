@@ -89,6 +89,7 @@ The two halves are independent. FFmpeg burn-in needs no key and no credit, so a 
 | `GET /api/render/:id` | `{ status, progress, step, downloadUrl }` — poll while `status` is `queued`/`working` |
 | `GET /api/render/:id/file` | the finished MP4 |
 | `POST /api/translate` | JSON `{ lines, source, target }` → `{ lines, target, note }` — needs no key (MyMemory, free) |
+| `POST /api/polish-hinglish` | JSON `{ words }` → `{ words, changed }` — AI pass fixing rule-based Hinglish that's phonetically-correct-but-unnatural ("laraki" → "ladki"). Word count in = word count out, always; falls back to the input unchanged on any failure (no `GROQ_API_KEY`, bad response, timeout). |
 | `POST /api/payments/create-order` | JSON `{ billing, tier }` → `{ orderId, amount, currency, keyId }`. Amount is looked up server-side from `src/lib/plans.js` — the client never says how much to charge. |
 | `POST /api/payments/verify` | JSON `{ razorpay_order_id, razorpay_payment_id, razorpay_signature, billing, tier }` → `{ verified }`. HMAC-checked against `RAZORPAY_KEY_SECRET` — a client "payment succeeded" callback is never trusted on its own. |
 

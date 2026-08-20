@@ -74,6 +74,7 @@ UQ.editor = {
         this.state.draft = this.state.transcript;
         this.state.style.tpl = p.tpl;
         this.state.style.ratio = p.ratio;
+        if (hi) this.polishInBackground();
       }
     }
     this.applyTemplateRhythm(this.state.style.tpl);
@@ -342,6 +343,7 @@ UQ.editor = {
         s.draft = s.transcript;
         s.timedWords = hi ? hi.timedWords : timed;
         s.note = serverFailNote ? serverFailNote + ' ' + result.note : result.note;
+        if (hi) this.polishInBackground();
       } else {
         s.note = (serverFailNote ? serverFailNote + ' ' : '') + (result.note || voice.note);
         s.timedWords = null;
@@ -459,7 +461,7 @@ UQ.editor = {
         this.renderSyncCard();
         if (state === 'stopped') {
           const hi = this.hinglishify(s.transcript, null);
-          if (hi) { s.transcript = hi.text; s.draft = hi.text; }
+          if (hi) { s.transcript = hi.text; s.draft = hi.text; this.polishInBackground(); }
           else s.draft = s.transcript;
           this.setTab('text');
           this.renderTextPanel();
@@ -515,6 +517,43 @@ UQ.editor = {
     return { text: UQ.transliterate.toHinglish(text), timedWords: timedWords || null };
   },
 
+  /* Fire-and-forget AI pass over the rule-based Hinglish output — see
+     server/src/lib/spellcheck.js. Never blocks the caller: hinglishify()
+     already updated the UI instantly with the (correct, just sometimes
+     unnatural-reading) rule-based text, and this quietly upgrades it a
+     moment later if the polish call succeeds. A run counter guards
+     against a slow response landing after a newer edit superseded it —
+     same pattern as _run guards a stale transcription. */
+  _polishRun: 0,
+  async polishInBackground() {
+    const s = this.state;
+    const hasTimed = s.timedWords && s.timedWords.length > 0;
+    const words = hasTimed ? s.timedWords.map(w => w.text) : (s.transcript || '').trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return;
+
+    const run = ++this._polishRun;
+    let result;
+    try { result = await UQ.api.polishHinglish(words); } catch (e) { return; }
+    if (this._polishRun !== run) return;
+    if (!result || !Array.isArray(result.words) || result.words.length !== words.length || !result.changed) return;
+
+    if (hasTimed) {
+      s.timedWords = s.timedWords.map((w, i) => Object.assign({}, w, { text: result.words[i] }));
+      s.transcript = s.timedWords.map(w => w.text).join(' ');
+    } else {
+      s.transcript = result.words.join(' ');
+    }
+    s.draft = s.transcript;
+    const ta = UQ.ui.el('#transcript');
+    if (ta && document.activeElement !== ta) ta.value = s.transcript;
+    this.recompute();
+    this.renderTransport();
+    this.renderSyncCard();
+    this._paintScriptMeta();
+    this.paintFrame(true);
+    UQ.ui.toast('Spelling polished');
+  },
+
   /* Manual button next to "Re-match to voice" — mainly for Devanagari typed
      or pasted straight into the script box, since auto-caption and dictation
      already convert automatically as soon as a transcript comes in. */
@@ -539,6 +578,7 @@ UQ.editor = {
     this._paintScriptMeta();
     this.paintFrame(true);
     UQ.ui.toast('Converted to Hinglish');
+    this.polishInBackground();
   },
 
   /* After typing pauses, rebuild word timing from voice energy + latest script. */

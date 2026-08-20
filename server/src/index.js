@@ -22,6 +22,7 @@ import { renderRouter } from './routes/render.js';
 import { translateRouter } from './routes/translate.js';
 import { paymentsRouter } from './routes/payments.js';
 import { webhookRouter } from './routes/webhook.js';
+import { spellcheckRouter } from './routes/spellcheck.js';
 import { adminConfigured } from './lib/firebase-admin.js';
 
 ensureDirs();
@@ -53,6 +54,7 @@ app.get('/api/health', async (req, res) => {
     accounts: adminConfigured(),   // server-side crediting (webhooks need this)
     ffmpeg: ffmpeg || null,
     sttProvider: sttConfigured() ? config.stt.provider : null,
+    spellcheck: !!config.groq.apiKey,   // AI polish pass over Hinglish captions
     maxUploadMb: config.maxUploadMb
   });
 });
@@ -61,6 +63,7 @@ app.use('/api', transcribeRouter);
 app.use('/api', renderRouter);
 app.use('/api', translateRouter);
 app.use('/api', paymentsRouter);
+app.use('/api', spellcheckRouter);
 
 app.use((req, res) => res.status(404).json({ error: 'Not found: ' + req.method + ' ' + req.path }));
 

@@ -158,6 +158,21 @@ UQ.api = {
     return this._json(res);
   },
 
+  /* polishHinglish(words) -> { words: [...corrected...], changed }
+     AI pass over already-transliterated Hinglish, fixing spellings the
+     rule-based engine gets phonetically-correct-but-unnatural ("laraki"
+     -> "ladki"). Word count in equals word count out, always — never
+     merges/drops/reorders — so callers can zip the result straight back
+     onto the same timedWords array by index. */
+  async polishHinglish(words) {
+    const res = await fetch(this.url('/api/polish-hinglish'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ words })
+    });
+    return this._json(res);
+  },
+
   downloadUrl(job) {
     return job && job.downloadUrl ? this.base() + job.downloadUrl : null;
   },

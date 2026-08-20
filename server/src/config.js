@@ -61,6 +61,16 @@ export const config = {
     };
   })(),
 
+  /* Decoupled from stt.apiKey on purpose — that one only holds a Groq key
+     when STT_PROVIDER=groq, but the spelling-polish pass (lib/spellcheck.js)
+     wants Groq's chat models regardless of which provider transcription is
+     using. Same free Groq key as STT; get one at console.groq.com/keys. */
+  groq: {
+    apiKey: process.env.GROQ_API_KEY || '',
+    chatModel: process.env.GROQ_CHAT_MODEL || 'openai/gpt-oss-120b',
+    baseUrl: 'https://api.groq.com/openai/v1'
+  },
+
   /* keyId is public (the client needs it to open Checkout); keySecret must
      never leave this server — it signs orders and verifies payments.
      webhookSecret is a separate value Razorpay gives you when you add

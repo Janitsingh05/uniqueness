@@ -32,6 +32,12 @@ window.UQ = window.UQ || {};
 const NUKTA_MARK = '़';
 
 UQ.transliterate = {
+  /* Whole-word spellings for cases where letter-by-letter rules read
+     oddly, or where real Hinglish drops a vowel the strict phonetic
+     rules would keep (होना -> "hona", not "honaa"; निकालते -> "nikalte",
+     not the "nikaalate" plain consonant-by-consonant rules would give).
+     Kept to the words common enough that a shared spelling actually
+     matters — this is not an attempt at full schwa-deletion. */
   OVERRIDES: {
     'में': 'mein', 'मैं': 'main', 'क्या': 'kya', 'नहीं': 'nahi',
     'कुछ': 'kuch', 'हुआ': 'hua', 'हुई': 'hui', 'हुए': 'hue',
@@ -42,7 +48,56 @@ UQ.transliterate = {
     'हो': 'ho', 'यह': 'yeh', 'वह': 'woh',
     'क्यों': 'kyun', 'कैसे': 'kaise', 'कोई': 'koi',
     'सकते': 'sakte', 'सकता': 'sakta', 'सकती': 'sakti',
-    'रहे': 'rahe', 'रहा': 'raha', 'रही': 'rahi'
+    'रहे': 'rahe', 'रहा': 'raha', 'रही': 'rahi',
+
+    'इसे': 'ise', 'इसको': 'isko', 'इसकी': 'iski', 'इसका': 'iska', 'इसके': 'iske',
+    'उसे': 'use', 'उसको': 'usko', 'उसकी': 'uski', 'उसका': 'uska', 'उसके': 'uske',
+    'उनके': 'unke', 'उनकी': 'unki', 'उनका': 'unka', 'उन्हें': 'unhe',
+    'अपने': 'apne', 'अपना': 'apna', 'अपनी': 'apni',
+    'मुझे': 'mujhe', 'मेरा': 'mera', 'मेरी': 'meri', 'मेरे': 'mere',
+    'तुम्हें': 'tumhe', 'तुम्हारा': 'tumhara', 'तुम्हारी': 'tumhari', 'तुम्हारे': 'tumhare',
+    'हमें': 'hamein', 'हमारा': 'hamara', 'हमारी': 'hamari', 'हमारे': 'hamare',
+    'आपका': 'aapka', 'आपकी': 'aapki', 'आपके': 'aapke', 'आपको': 'aapko',
+    'वाला': 'wala', 'वाले': 'wale', 'वाली': 'wali', 'वालों': 'walon',
+    'सबसे': 'sabse', 'सभी': 'sabhi', 'बहुत': 'bahut', 'ज्यादा': 'zyada',
+    'थोड़ा': 'thoda', 'थोड़ी': 'thodi', 'अभी': 'abhi', 'कभी': 'kabhi',
+    'यहाँ': 'yahan', 'यहां': 'yahan', 'वहाँ': 'wahan', 'वहां': 'wahan',
+    'लेकिन': 'lekin', 'मगर': 'magar', 'क्योंकि': 'kyunki', 'शायद': 'shayad',
+    'जरूर': 'zaroor', 'ज़रूर': 'zaroor', 'बिना': 'bina', 'फिर': 'phir',
+    'ऊपर': 'upar', 'नीचे': 'neeche', 'अंदर': 'andar', 'बाहर': 'bahar',
+    'सामने': 'saamne', 'पीछे': 'peeche', 'लोग': 'log', 'लोगों': 'logon',
+    'बात': 'baat', 'साथ': 'saath', 'पास': 'paas', 'चीज़': 'cheez', 'चीज': 'cheez',
+    'काम': 'kaam', 'समय': 'samay', 'अलावा': 'alawa', 'शुरू': 'shuru',
+    'ज़रूरी': 'zaroori', 'जरूरी': 'zaroori', 'ज़बरदस्ती': 'zabardasti', 'जबरदस्ती': 'zabardasti',
+    'वही': 'wahi', 'यही': 'yahi',
+
+    /* English loanwords Whisper transcribes phonetically when it hears
+       them inside Hindi speech — spelled back out as the real English
+       word instead of a literal (and odd-looking) phonetic reading. */
+    'शोल्डर': 'shoulder', 'स्टार': 'star',
+
+    'करना': 'karna', 'होना': 'hona', 'जाना': 'jaana', 'देना': 'dena', 'लेना': 'lena',
+    'रखना': 'rakhna', 'देखना': 'dekhna', 'सुनना': 'sunna', 'कहना': 'kehna',
+    'पढ़ना': 'padhna', 'लिखना': 'likhna', 'समझना': 'samajhna', 'बताना': 'batana',
+    'मिलना': 'milna', 'खेलना': 'khelna', 'चलना': 'chalna', 'बनाना': 'banana',
+    'निकालना': 'nikalna', 'रोकना': 'rokna', 'डालना': 'daalna', 'बोलना': 'bolna', 'सोचना': 'sochna',
+    'करते': 'karte', 'करता': 'karta', 'करती': 'karti',
+    'जाते': 'jaate', 'जाता': 'jaata', 'जाती': 'jaati',
+    'देखते': 'dekhte', 'देखता': 'dekhta', 'देखती': 'dekhti',
+    'निकालते': 'nikalte', 'निकालता': 'nikalta', 'निकालती': 'nikalti',
+    'समझते': 'samajhte', 'समझता': 'samajhta', 'समझती': 'samajhti',
+    'बनाते': 'banate', 'बनाता': 'banata', 'बनाती': 'banati',
+    'बताते': 'batate', 'बताता': 'batata', 'बताती': 'batati',
+    'दिखाते': 'dikhate', 'दिखाता': 'dikhata', 'दिखाती': 'dikhati',
+    'होता': 'hota', 'होती': 'hoti', 'होते': 'hote',
+    'काटने': 'katne', 'काटना': 'katna', 'काटता': 'katta', 'काटती': 'katti', 'काटते': 'katte',
+    'जिसके': 'jiske', 'जिसका': 'jiska', 'जिसकी': 'jiski', 'जिसे': 'jise',
+    'देखकर': 'dekhkar', 'सुनकर': 'sunkar', 'करके': 'karke', 'जाकर': 'jaakar',
+
+    /* English loanword, common misreading otherwise: "minimam"/"raink". */
+    'मिनिमम': 'minimum', 'रैंक': 'rank', 'रूल': 'rule',
+
+    'का': 'ka', 'मतलब': 'matlab'
   },
 
   /* Two- and three-consonant conjuncts that read better as one memorized
@@ -93,7 +148,14 @@ UQ.transliterate = {
            'a'. Runs the same way regardless of which of the three cases
            above produced the unit. */
         if (next === '्') { i += consumed + 1; continue; }
-        if (this.MATRAS[next]) { out += this.MATRAS[next]; i += consumed + 1; continue; }
+        if (this.MATRAS[next]) {
+          /* Word-final ी reads as real Hinglish types it — "zaroori",
+             "koi bhi", "chaabi" — not the "ee" the letter-for-letter
+             rule gives everywhere else ("deep" mid-word, say). */
+          const wordFinal = i + consumed + 1 >= s.length;
+          out += (next === 'ी' && wordFinal) ? 'i' : this.MATRAS[next];
+          i += consumed + 1; continue;
+        }
         if (i + consumed >= s.length) { i += consumed; continue; } // word-final: drop inherent 'a'
         out += 'a'; i += consumed; continue;                        // mid-word: keep inherent 'a'
       }

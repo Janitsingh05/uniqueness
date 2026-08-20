@@ -25,7 +25,49 @@ const OVERRIDES = {
   'हो': 'ho', 'यह': 'yeh', 'वह': 'woh',
   'क्यों': 'kyun', 'कैसे': 'kaise', 'कोई': 'koi',
   'सकते': 'sakte', 'सकता': 'sakta', 'सकती': 'sakti',
-  'रहे': 'rahe', 'रहा': 'raha', 'रही': 'rahi'
+  'रहे': 'rahe', 'रहा': 'raha', 'रही': 'rahi',
+
+  'इसे': 'ise', 'इसको': 'isko', 'इसकी': 'iski', 'इसका': 'iska', 'इसके': 'iske',
+  'उसे': 'use', 'उसको': 'usko', 'उसकी': 'uski', 'उसका': 'uska', 'उसके': 'uske',
+  'उनके': 'unke', 'उनकी': 'unki', 'उनका': 'unka', 'उन्हें': 'unhe',
+  'अपने': 'apne', 'अपना': 'apna', 'अपनी': 'apni',
+  'मुझे': 'mujhe', 'मेरा': 'mera', 'मेरी': 'meri', 'मेरे': 'mere',
+  'तुम्हें': 'tumhe', 'तुम्हारा': 'tumhara', 'तुम्हारी': 'tumhari', 'तुम्हारे': 'tumhare',
+  'हमें': 'hamein', 'हमारा': 'hamara', 'हमारी': 'hamari', 'हमारे': 'hamare',
+  'आपका': 'aapka', 'आपकी': 'aapki', 'आपके': 'aapke', 'आपको': 'aapko',
+  'वाला': 'wala', 'वाले': 'wale', 'वाली': 'wali', 'वालों': 'walon',
+  'सबसे': 'sabse', 'सभी': 'sabhi', 'बहुत': 'bahut', 'ज्यादा': 'zyada',
+  'थोड़ा': 'thoda', 'थोड़ी': 'thodi', 'अभी': 'abhi', 'कभी': 'kabhi',
+  'यहाँ': 'yahan', 'यहां': 'yahan', 'वहाँ': 'wahan', 'वहां': 'wahan',
+  'लेकिन': 'lekin', 'मगर': 'magar', 'क्योंकि': 'kyunki', 'शायद': 'shayad',
+  'जरूर': 'zaroor', 'ज़रूर': 'zaroor', 'बिना': 'bina', 'फिर': 'phir',
+  'ऊपर': 'upar', 'नीचे': 'neeche', 'अंदर': 'andar', 'बाहर': 'bahar',
+  'सामने': 'saamne', 'पीछे': 'peeche', 'लोग': 'log', 'लोगों': 'logon',
+  'बात': 'baat', 'साथ': 'saath', 'पास': 'paas', 'चीज़': 'cheez', 'चीज': 'cheez',
+  'काम': 'kaam', 'समय': 'samay', 'अलावा': 'alawa', 'शुरू': 'shuru',
+  'ज़रूरी': 'zaroori', 'जरूरी': 'zaroori', 'ज़बरदस्ती': 'zabardasti', 'जबरदस्ती': 'zabardasti',
+  'वही': 'wahi', 'यही': 'yahi',
+  'शोल्डर': 'shoulder', 'स्टार': 'star',
+
+  'करना': 'karna', 'होना': 'hona', 'जाना': 'jaana', 'देना': 'dena', 'लेना': 'lena',
+  'रखना': 'rakhna', 'देखना': 'dekhna', 'सुनना': 'sunna', 'कहना': 'kehna',
+  'पढ़ना': 'padhna', 'लिखना': 'likhna', 'समझना': 'samajhna', 'बताना': 'batana',
+  'मिलना': 'milna', 'खेलना': 'khelna', 'चलना': 'chalna', 'बनाना': 'banana',
+  'निकालना': 'nikalna', 'रोकना': 'rokna', 'डालना': 'daalna', 'बोलना': 'bolna', 'सोचना': 'sochna',
+  'करते': 'karte', 'करता': 'karta', 'करती': 'karti',
+  'जाते': 'jaate', 'जाता': 'jaata', 'जाती': 'jaati',
+  'देखते': 'dekhte', 'देखता': 'dekhta', 'देखती': 'dekhti',
+  'निकालते': 'nikalte', 'निकालता': 'nikalta', 'निकालती': 'nikalti',
+  'समझते': 'samajhte', 'समझता': 'samajhta', 'समझती': 'samajhti',
+  'बनाते': 'banate', 'बनाता': 'banata', 'बनाती': 'banati',
+  'बताते': 'batate', 'बताता': 'batata', 'बताती': 'batati',
+  'दिखाते': 'dikhate', 'दिखाता': 'dikhata', 'दिखाती': 'dikhati',
+  'होता': 'hota', 'होती': 'hoti', 'होते': 'hote',
+  'काटने': 'katne', 'काटना': 'katna', 'काटता': 'katta', 'काटती': 'katti', 'काटते': 'katte',
+  'जिसके': 'jiske', 'जिसका': 'jiska', 'जिसकी': 'jiski', 'जिसे': 'jise',
+  'देखकर': 'dekhkar', 'सुनकर': 'sunkar', 'करके': 'karke', 'जाकर': 'jaakar',
+  'मिनिमम': 'minimum', 'रैंक': 'rank', 'रूल': 'rule',
+  'का': 'ka', 'मतलब': 'matlab'
 };
 
 const CONJUNCTS = { 'क्ष': 'ksh', 'ज्ञ': 'gy', 'श्र': 'shr', 'त्र': 'tr' };
@@ -63,7 +105,11 @@ function wordToRoman(word) {
       out += isConjunct ? CONJUNCTS[three] : isNukta ? NUKTA[s[i]] : CONSONANTS[s[i]];
       const next = s[i + consumed];
       if (next === '्') { i += consumed + 1; continue; }
-      if (MATRAS[next]) { out += MATRAS[next]; i += consumed + 1; continue; }
+      if (MATRAS[next]) {
+        const wordFinal = i + consumed + 1 >= s.length;
+        out += (next === 'ी' && wordFinal) ? 'i' : MATRAS[next];
+        i += consumed + 1; continue;
+      }
       if (i + consumed >= s.length) { i += consumed; continue; }
       out += 'a'; i += consumed; continue;
     }

@@ -27,7 +27,6 @@ UQ.dashboard = {
     input.addEventListener('change', e => { if (e.target.files[0]) this.handoff(e.target.files[0]); });
     UQ.ui.el('#uploadBtn').addEventListener('click', () => input.click());
 
-    this.renderStats();
     this.renderProjects();
     this.renderActivity();
     this.renderTiles();
@@ -43,21 +42,6 @@ UQ.dashboard = {
     UQ.ui.toast('Opening the editor — captions start automatically');
     const parked = await UQ.handoff.put(file);
     location.href = parked ? 'editor.html?from=upload' : 'editor.html?pick=1';
-  },
-
-  renderStats() {
-    const u = this.user, projects = UQ.db.projects(u.id);
-    const stats = [
-      { icon: '◔', tone: '', label: 'Minutes left', value: u.minutes, note: u.plan + ' plan credit' },
-      { icon: '▤', tone: 'teal', label: 'Projects', value: projects.length, note: projects.length ? 'Saved on this account' : 'Nothing saved yet' },
-      { icon: '◨', tone: '', label: 'Caption styles', value: UQ.config.templates.length, note: 'All unlocked on every plan' }
-    ];
-    UQ.ui.el('#stats').innerHTML = stats.map(s =>
-      '<div class="card stat">' +
-        '<div class="stat__top"><div class="stat__icon' + (s.tone === 'teal' ? ' stat__icon--teal' : '') + '">' + s.icon + '</div>' +
-        '<span class="stat__label">' + s.label + '</span></div>' +
-        '<div class="stat__value">' + s.value + '</div><div class="stat__note">' + s.note + '</div>' +
-      '</div>').join('');
   },
 
   renderProjects() {

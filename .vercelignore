@@ -1,0 +1,12 @@
+# The backend runs on Render, not here — Vercel only serves the static
+# studio. Without this, every file under server/ is fetchable on the live
+# domain (server/src/**, package.json, .env.example were all returning 200).
+# No credentials live in those files, but there is no reason to publish
+# them either. firebase.json's hosting.ignore does the same for the
+# Firebase mirror; keep the two in step.
+server/
+
+# Local scaffolding that is not part of the site.
+Dockerfile
+.dockerignore
+README.md

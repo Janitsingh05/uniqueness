@@ -7,8 +7,21 @@ window.UQ = window.UQ || {};
 UQ.auth = {
   mode: 'signin',
 
+  /* Where to land after signing in. shell.js sends people here with
+     ?redirect=editor when they hit a gated page signed-out, so they get
+     back to what they were trying to do instead of the dashboard.
+     Allow-listed rather than reflected: an open redirect on a login page
+     is a phishing primitive, so an unknown value falls back home. */
+  DESTINATIONS: ['dashboard', 'editor', 'credits', 'settings', 'refer', 'plugins', 'search', 'templates'],
+
+  destination(fallback) {
+    const want = new URLSearchParams(location.search).get('redirect') || '';
+    const clean = want.replace(/\.html$/, '').replace(/[^a-z]/gi, '').toLowerCase();
+    return this.DESTINATIONS.includes(clean) ? clean + '.html' : fallback;
+  },
+
   init() {
-    if (UQ.db.currentUser()) { location.href = 'dashboard.html'; return; }
+    if (UQ.db.currentUser()) { location.replace(this.destination('dashboard.html')); return; }
     const params = new URLSearchParams(location.search);
     if (params.get('mode') === 'signup') this.mode = 'signup';
     /* The referral link points at the homepage, not straight here — see
@@ -73,10 +86,12 @@ UQ.auth = {
       if (this.mode === 'signup') {
         await UQ.db.signUp({ name, email, password: pw, referral });
         localStorage.removeItem('uq_ref_code');
-        location.href = 'credits.html?welcome=1';
+        /* New accounts still see the plans page first, unless they were
+           pushed here from somewhere specific. */
+        location.href = this.destination('credits.html?welcome=1');
       } else {
         await UQ.db.signIn(email, pw);
-        location.href = 'dashboard.html';
+        location.href = this.destination('dashboard.html');
       }
     } catch (err) {
       btn.classList.remove('btn--busy');
@@ -95,7 +110,7 @@ UQ.auth = {
     try {
       const { isNew } = await UQ.db.signInWithGoogle(this.presetRef);
       if (isNew) localStorage.removeItem('uq_ref_code');
-      location.href = isNew ? 'credits.html?welcome=1' : 'dashboard.html';
+      location.href = this.destination(isNew ? 'credits.html?welcome=1' : 'dashboard.html');
     } catch (err) {
       btn.classList.remove('btn--busy');
       btn.textContent = label;

@@ -315,10 +315,39 @@ UQ.db = {
     if (!u) return null;
     return this.updateUser(id, { minutes: Math.round((u.minutes + minutes) * 10) / 10 });
   },
-  spendMinutes(id, minutes) {
+  /* Spending is the server's call, not ours. users/{uid}.minutes is
+     server-only in firestore.rules, so writing it from here would simply
+     be rejected — and before that lock it was not, which made the whole
+     credit model editable from devtools. The real deduction happens
+     inside POST /api/render, which charges before it burns anything and
+     refunds if the render fails; this only mirrors the balance the
+     server reported back so the sidebar is not stale.
+
+     `minutes` here is the server's NEW balance, not an amount to
+     subtract. In local demo mode (no Firebase, no backend) there is no
+     server to ask, so it falls back to the old local arithmetic. */
+  applyServerBalance(id, minutes) {
+    if (!Number.isFinite(minutes)) return this.currentUser();
+    if (this.mode === 'firebase') {
+      if (!this._user || this._user.id !== id) return this._user;
+      this._user = Object.assign({}, this._user, { minutes });
+      return this._user;
+    }
+    return this.updateUser(id, { minutes: Math.max(0, Math.round(minutes * 10) / 10) });
+  },
+
+  /* Local demo mode only — see applyServerBalance. */
+  spendMinutesLocal(id, minutes) {
     const u = this.mode === 'firebase' ? this._user : this.read().users[id];
     if (!u) return null;
     return this.updateUser(id, { minutes: Math.max(0, Math.round((u.minutes - minutes) * 10) / 10) });
+  },
+
+  /* A fresh Firebase ID token for the API. null when signed out or in
+     local mode — callers treat that as "not signed in". */
+  async idToken() {
+    if (this.mode !== 'firebase' || !this._auth || !this._auth.currentUser) return null;
+    try { return await this._auth.currentUser.getIdToken(); } catch (e) { return null; }
   },
 
   /* ---------- orders ---------- */

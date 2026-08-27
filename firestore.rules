@@ -29,10 +29,20 @@ service cloud.firestore {
              mapping below is the actual source of truth for who a code
              pays, so this can't be used to hijack someone else's
              traffic, but locking it removes a pointless way to break
-             your own referral link. */
+             your own referral link.
+           minutes/plan — the credit balance and the paid tier. These
+             were writable by the account itself, which made the whole
+             credit model advisory: one devtools line setting minutes to
+             99999, or plan to 'Studio', bought unlimited captioning and
+             removed the watermark for free. Both are now server-only,
+             written by lib/credits.js through the Admin SDK after a
+             signature-verified Razorpay payment. Spending a credit has
+             to go through the server too — see the note in js/db.js's
+             spendMinutes. */
       allow update: if isSelf(userId)
         && !request.resource.data.diff(resource.data).affectedKeys()
-             .hasAny(['referralAvailable', 'referralEarned', 'referredBy', 'code']);
+             .hasAny(['referralAvailable', 'referralEarned', 'referredBy', 'code',
+                      'minutes', 'plan']);
 
       match /projects/{projectId} {
         allow read, write: if isSelf(userId);

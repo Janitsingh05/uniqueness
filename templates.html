@@ -17,6 +17,13 @@
 <link rel="stylesheet" href="css/components.css" />
 <link rel="stylesheet" href="css/captions.css" />
 <link rel="stylesheet" href="css/pages.css" />
+<script>
+/* Hide the app until auth resolves — see the flash-guard note in
+   css/base.css. Inline and blocking on purpose: a deferred script runs
+   after the markup has already painted, which is exactly the flash this
+   prevents. js/shell.js clears the attribute once a user is confirmed. */
+document.documentElement.setAttribute('data-auth-pending','');
+</script>
 </head>
 <body>
 
@@ -32,7 +39,99 @@
       </div>
 
       <div class="row-wrap" id="filters" style="gap:7px;margin-bottom:22px"></div>
-      <div class="grid grid--templates" id="tplGrid"></div>
+      <!-- All 11 styles ship as real HTML so the names and descriptions are
+           readable with JavaScript off. js/templates-page.js only filters
+           which cards are visible; it no longer builds them. -->
+      <div class="grid grid--templates" id="tplGrid">
+        <div class="tpl-card" data-kind="One word" id="style-punch">
+          <div class="preview preview--tall"><span class="pv-punch">MONEY</span></div>
+          <div class="tpl-card__body">
+            <div class="spread"><h3 class="tpl-card__name">Punch captions</h3><span class="badge badge--grad">POPULAR</span></div>
+            <p class="tpl-card__desc">One giant word, hard scale-in. One word style, built for 1 word a line.</p>
+            <a class="btn btn--ghost btn--block btn--sm" href="editor.html?tpl=punch">Use Punch</a>
+          </div>
+        </div>
+        <div class="tpl-card" data-kind="Highlight" id="style-karaoke">
+          <div class="preview preview--tall"><span class="pv-karaoke"><span>this</span> <span>changes</span> <span>everything</span></span></div>
+          <div class="tpl-card__body">
+            <div class="spread"><h3 class="tpl-card__name">Karaoke captions</h3><span class="badge badge--grad">POPULAR</span></div>
+            <p class="tpl-card__desc">Line holds, the spoken word lights up. Highlight style, built for 4 words a line.</p>
+            <a class="btn btn--ghost btn--block btn--sm" href="editor.html?tpl=karaoke">Use Karaoke</a>
+          </div>
+        </div>
+        <div class="tpl-card" data-kind="Boxed" id="style-chip">
+          <div class="preview preview--tall"><span class="pv-chip"><span>watch</span><span>this</span><span>part</span></span></div>
+          <div class="tpl-card__body">
+            <div class="spread"><h3 class="tpl-card__name">Chip captions</h3></div>
+            <p class="tpl-card__desc">Solid block behind the active word. Boxed style, built for 3 words a line.</p>
+            <a class="btn btn--ghost btn--block btn--sm" href="editor.html?tpl=chip">Use Chip</a>
+          </div>
+        </div>
+        <div class="tpl-card" data-kind="Glow" id="style-neon">
+          <div class="preview preview--tall"><span class="pv-neon">after hours</span></div>
+          <div class="tpl-card__body">
+            <div class="spread"><h3 class="tpl-card__name">Neon captions</h3></div>
+            <p class="tpl-card__desc">Soft glow, night-shoot energy. Glow style, built for 1 word a line.</p>
+            <a class="btn btn--ghost btn--block btn--sm" href="editor.html?tpl=neon">Use Neon</a>
+          </div>
+        </div>
+        <div class="tpl-card" data-kind="Build-up" id="style-build">
+          <div class="preview preview--tall"><span class="pv-build"><span>one</span> <span>word</span> <span>at</span> <span>a</span> <span>time</span></span></div>
+          <div class="tpl-card__body">
+            <div class="spread"><h3 class="tpl-card__name">Build captions</h3></div>
+            <p class="tpl-card__desc">The line assembles as it's spoken. Build-up style, built for 4 words a line.</p>
+            <a class="btn btn--ghost btn--block btn--sm" href="editor.html?tpl=build">Use Build</a>
+          </div>
+        </div>
+        <div class="tpl-card" data-kind="Typewriter" id="style-type">
+          <div class="preview preview--tall"><span class="pv-type"><i>so here is the thing</i><b>_</b></span></div>
+          <div class="tpl-card__body">
+            <div class="spread"><h3 class="tpl-card__name">Type captions</h3></div>
+            <p class="tpl-card__desc">Characters type out behind a caret. Typewriter style, built for 5 words a line.</p>
+            <a class="btn btn--ghost btn--block btn--sm" href="editor.html?tpl=type">Use Type</a>
+          </div>
+        </div>
+        <div class="tpl-card" data-kind="Pop" id="style-bounce">
+          <div class="preview preview--tall"><span class="pv-bounce"><span>no</span> <span>way</span> <span>that</span> <span>worked</span></span></div>
+          <div class="tpl-card__body">
+            <div class="spread"><h3 class="tpl-card__name">Bounce captions</h3><span class="badge badge--teal">NEW</span></div>
+            <p class="tpl-card__desc">Springy pop — the short-form default. Pop style, built for 1 word a line.</p>
+            <a class="btn btn--ghost btn--block btn--sm" href="editor.html?tpl=bounce">Use Bounce</a>
+          </div>
+        </div>
+        <div class="tpl-card" data-kind="Outline" id="style-meme">
+          <div class="preview preview--tall"><span class="pv-meme">SAY LESS</span></div>
+          <div class="tpl-card__body">
+            <div class="spread"><h3 class="tpl-card__name">Meme captions</h3></div>
+            <p class="tpl-card__desc">Fat outline, hard offset shadow. Outline style, built for 4 words a line.</p>
+            <a class="btn btn--ghost btn--block btn--sm" href="editor.html?tpl=meme">Use Meme</a>
+          </div>
+        </div>
+        <div class="tpl-card" data-kind="Gradient" id="style-sweep">
+          <div class="preview preview--tall"><span class="pv-sweep">go viral twice</span></div>
+          <div class="tpl-card__body">
+            <div class="spread"><h3 class="tpl-card__name">Sweep captions</h3></div>
+            <p class="tpl-card__desc">Colour travels across the line. Gradient style, built for 4 words a line.</p>
+            <a class="btn btn--ghost btn--block btn--sm" href="editor.html?tpl=sweep">Use Sweep</a>
+          </div>
+        </div>
+        <div class="tpl-card" data-kind="Subtitle" id="style-bar">
+          <div class="preview preview--tall preview--bottom"><span class="pv-bar">clean, readable, broadcast-safe</span></div>
+          <div class="tpl-card__body">
+            <div class="spread"><h3 class="tpl-card__name">Bar captions</h3></div>
+            <p class="tpl-card__desc">Classic bottom subtitle plate. Subtitle style, built for 6 words a line.</p>
+            <a class="btn btn--ghost btn--block btn--sm" href="editor.html?tpl=bar">Use Bar</a>
+          </div>
+        </div>
+        <div class="tpl-card" data-kind="Serif" id="style-editorial">
+          <div class="preview preview--tall"><span class="pv-editorial">the quiet part, <em>out loud</em></span></div>
+          <div class="tpl-card__body">
+            <div class="spread"><h3 class="tpl-card__name">Editorial captions</h3></div>
+            <p class="tpl-card__desc">Calm serif for voice-over and brand work. Serif style, built for 5 words a line.</p>
+            <a class="btn btn--ghost btn--block btn--sm" href="editor.html?tpl=editorial">Use Editorial</a>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 </div>

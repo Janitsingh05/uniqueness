@@ -40,8 +40,9 @@
 
 <!-- Structured data. Kept static (not JS-rendered) so it reads correctly
      for crawlers that don't execute JavaScript — including most AI
-     crawlers today. The FAQ block below is hand-mirrored from
-     UQ.config.faq in js/config.js; keep the two in sync when it changes. -->
+     crawlers today. The FAQ block below is generated from
+     UQ.config.faq, as is the <details> list in the page body — all three
+     say the same thing by construction. -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -91,7 +92,7 @@
     {
       "@type": "Question",
       "name": "How do captions lock to my voice?",
-      "acceptedAnswer": { "@type": "Answer", "text": "On upload we transcribe the clip and lock every word to the moment it is spoken, then group lines by natural rhythm. Edit the script anytime — timing adjusts with it." }
+      "acceptedAnswer": { "@type": "Answer", "text": "We transcribe the clip and lock every word to the moment it is spoken, then group lines by natural rhythm. Edit the script anytime — the timing adjusts with it." }
     },
     {
       "@type": "Question",
@@ -106,7 +107,7 @@
     {
       "@type": "Question",
       "name": "Is my clip uploaded to a server?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Voice sync and captioning run in your browser by default and never leave your device. Signing in also unlocks higher-accuracy server-side transcription and real burned-in MP4 exports when you want them." }
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes — your clip is uploaded so it can be transcribed accurately and, if you export an MP4, so the captions can be burned in. It is used for nothing else, is never shared, and is deleted from our servers within 24 hours. See our privacy policy for the detail." }
     }
   ]
 }
@@ -122,7 +123,7 @@
       <a class="site-nav__link" href="#how">How it works</a>
       <a class="site-nav__link" href="#compare">Why it's different</a>
       <a class="site-nav__link" href="#styles">Styles</a>
-      <a class="site-nav__link" href="#pricing">Pricing</a>
+      <a class="site-nav__link" href="pricing.html">Pricing</a>
       <a class="site-nav__link" href="#faq">FAQ</a>
       <a class="site-nav__link" href="blog/index.html">Blog</a>
     </nav>
@@ -144,7 +145,7 @@
     <a class="site-nav__link" href="#how">How it works</a>
     <a class="site-nav__link" href="#compare">Why it's different</a>
     <a class="site-nav__link" href="#styles">Styles</a>
-    <a class="site-nav__link" href="#pricing">Pricing</a>
+    <a class="site-nav__link" href="pricing.html">Pricing</a>
     <a class="site-nav__link" href="#faq">FAQ</a>
     <a class="site-nav__link" href="blog/index.html">Blog</a>
     <a class="site-nav__link" href="login.html">Sign in</a>
@@ -247,7 +248,7 @@
         <span class="land-step__icon">⌕</span>
         <span class="land-step__num">01</span>
         <h3>Transcribe</h3>
-        <p>Accurate speech-to-text with real word-level timestamps. Your clip stays private — nothing is uploaded.</p>
+        <p>Accurate speech-to-text with real word-level timestamps. Your clip is private to your account and deleted from our servers within 24 hours.</p>
       </article>
       <article class="land-step">
         <span class="land-step__icon">◔</span>
@@ -315,8 +316,129 @@
         <button data-billing="packs" type="button">One-time packs</button>
       </div>
     </div>
-    <div class="grid grid--plans" id="pricingPreview"></div>
-    <p style="font-size:12.5px;color:var(--faint);margin-top:22px;text-align:center">Switch or pause your plan in two clicks · Secure payments via Razorpay (connect when ready)</p>
+    <!-- Both price sets ship as real HTML so they are readable with
+         JavaScript off and by crawlers; js/landing.js only swaps which
+         one is visible. Generated from UQ.config.monthly / .packs — keep
+         them in step if the numbers change. -->
+    <div class="grid grid--plans" id="pricingMonthly" data-plans="monthly">
+      <article class="plan">
+        <div class="plan__name">Free</div>
+        <div class="plan__blurb">Caption your first clips, free.</div>
+        <div class="plan__price"><b>₹0</b><span class="faint" style="font-size:12.5px">/mo</span></div>
+        <div class="plan__rate">No card needed</div>
+        <div class="plan__mins">3 minutes every month</div>
+        <div class="plan__feats">
+          <div class="plan__feat"><i>✓</i><span>Word-perfect captions, synced to every word</span></div>
+          <div class="plan__feat"><i>✓</i><span>Every kinetic style unlocked</span></div>
+          <div class="plan__feat"><i>✓</i><span>Ready-to-post 720p exports</span></div>
+          <div class="plan__feat"><i>✓</i><span>Exports carry a watermark on Free</span></div>
+        </div>
+        <a class="btn btn--block btn--quiet" href="login.html?mode=signup">Start free</a>
+      </article>
+      <article class="plan">
+        <div class="plan__name">Starter</div>
+        <div class="plan__blurb">For getting started without a watermark.</div>
+        <div class="plan__price"><b>₹299</b><span class="faint" style="font-size:12.5px">/mo</span></div>
+        <div class="plan__rate">just ₹10/day</div>
+        <div class="plan__mins">2 hours of captions, every month</div>
+        <div class="plan__feats">
+          <div class="plan__feat"><i>✓</i><span>Everything in Free</span></div>
+          <div class="plan__feat"><i>✓</i><span>2 hours of captions a month</span></div>
+          <div class="plan__feat"><i>✓</i><span>Watermark-free 1080p exports</span></div>
+          <div class="plan__feat"><i>✓</i><span>Auto-cut filler words</span></div>
+        </div>
+        <a class="btn btn--block btn--primary" href="credits.html">Get Starter</a>
+      </article>
+      <article class="plan plan--hot">
+        <span class="plan__badge plan__badge--hot">MOST POPULAR</span>
+        <div class="plan__name">Creator</div>
+        <div class="plan__blurb">For creators who post every week.</div>
+        <div class="plan__price"><b>₹499</b><span class="faint" style="font-size:12.5px">/mo</span></div>
+        <div class="plan__rate">just ₹17/day · was ₹799</div>
+        <div class="plan__mins">15 hours of captions a month</div>
+        <div class="plan__feats">
+          <div class="plan__feat"><i>✓</i><span>Everything in Starter</span></div>
+          <div class="plan__feat"><i>✓</i><span>Caption hours of video, not minutes</span></div>
+          <div class="plan__feat"><i>✓</i><span>Crisp 4K exports, zero watermark</span></div>
+          <div class="plan__feat"><i>✓</i><span>Auto-cut filler for tighter clips</span></div>
+        </div>
+        <a class="btn btn--block btn--primary" href="credits.html">Get Creator</a>
+      </article>
+      <article class="plan">
+        <div class="plan__name">Studio</div>
+        <div class="plan__blurb">For power creators who publish all day.</div>
+        <div class="plan__price"><b>₹1,299</b><span class="faint" style="font-size:12.5px">/mo</span></div>
+        <div class="plan__rate">just ₹43/day · was ₹1,999</div>
+        <div class="plan__mins">Unlimited captions — never watch a counter</div>
+        <div class="plan__feats">
+          <div class="plan__feat"><i>✓</i><span>Everything in Creator</span></div>
+          <div class="plan__feat"><i>✓</i><span>Unlimited captions, month after month</span></div>
+          <div class="plan__feat"><i>✓</i><span>Sharpest 4K, zero watermark</span></div>
+          <div class="plan__feat"><i>✓</i><span>Early access to new styles</span></div>
+        </div>
+        <a class="btn btn--block btn--primary" href="credits.html">Get Studio</a>
+      </article>
+    </div>
+    <div class="grid grid--plans hidden" id="pricingPacks" data-plans="packs">
+      <article class="plan">
+        <div class="plan__name">Free</div>
+        <div class="plan__blurb">Caption your first clips, free.</div>
+        <div class="plan__price"><b>₹0</b><span class="faint" style="font-size:12.5px"></span></div>
+        <div class="plan__rate">No card needed</div>
+        <div class="plan__mins">3 minutes of captioning</div>
+        <div class="plan__feats">
+          <div class="plan__feat"><i>✓</i><span>Word-perfect captions, synced to every word</span></div>
+          <div class="plan__feat"><i>✓</i><span>Every kinetic style unlocked</span></div>
+          <div class="plan__feat"><i>✓</i><span>Ready-to-post 720p exports</span></div>
+          <div class="plan__feat"><i>✓</i><span>SRT, VTT &amp; TXT included</span></div>
+        </div>
+        <a class="btn btn--block btn--quiet" href="login.html?mode=signup">Start free</a>
+      </article>
+      <article class="plan">
+        <div class="plan__name">Starter pack</div>
+        <div class="plan__blurb">For getting started without a watermark.</div>
+        <div class="plan__price"><b>₹299</b><span class="faint" style="font-size:12.5px">one-time</span></div>
+        <div class="plan__rate">2 hours · one-time</div>
+        <div class="plan__mins">120 minutes of credit</div>
+        <div class="plan__feats">
+          <div class="plan__feat"><i>✓</i><span>Watermark-free 1080p exports</span></div>
+          <div class="plan__feat"><i>✓</i><span>Auto-cut filler words</span></div>
+          <div class="plan__feat"><i>✓</i><span>Credits never expire</span></div>
+          <div class="plan__feat"><i>✓</i><span>4K exports for premium clips</span></div>
+        </div>
+        <a class="btn btn--block btn--primary" href="credits.html">Get Starter pack</a>
+      </article>
+      <article class="plan plan--hot">
+        <span class="plan__badge plan__badge--hot">BEST VALUE</span>
+        <div class="plan__name">Creator pack</div>
+        <div class="plan__blurb">For creators who post every week.</div>
+        <div class="plan__price"><b>₹1,199</b><span class="faint" style="font-size:12.5px">one-time</span></div>
+        <div class="plan__rate">15 hours · best value pack</div>
+        <div class="plan__mins">900 minutes of credit</div>
+        <div class="plan__feats">
+          <div class="plan__feat"><i>✓</i><span>Everything in Starter</span></div>
+          <div class="plan__feat"><i>✓</i><span>Crisp 4K, zero watermark</span></div>
+          <div class="plan__feat"><i>✓</i><span>Hours of captions, not minutes</span></div>
+          <div class="plan__feat"><i>✓</i><span>Priority render queue</span></div>
+        </div>
+        <a class="btn btn--block btn--primary" href="credits.html">Get Creator pack</a>
+      </article>
+      <article class="plan">
+        <div class="plan__name">Studio pack</div>
+        <div class="plan__blurb">For power creators who publish all day.</div>
+        <div class="plan__price"><b>₹2,999</b><span class="faint" style="font-size:12.5px">one-time</span></div>
+        <div class="plan__rate">Unlimited captioning</div>
+        <div class="plan__mins">Unlimited captions</div>
+        <div class="plan__feats">
+          <div class="plan__feat"><i>✓</i><span>Everything in Creator</span></div>
+          <div class="plan__feat"><i>✓</i><span>Unlimited captions</span></div>
+          <div class="plan__feat"><i>✓</i><span>Early access to new styles</span></div>
+          <div class="plan__feat"><i>✓</i><span>Export-ready SRT · VTT · MP4</span></div>
+        </div>
+        <a class="btn btn--block btn--primary" href="credits.html">Get Studio pack</a>
+      </article>
+    </div>
+    <p style="font-size:12.5px;color:var(--faint);margin-top:22px;text-align:center">All prices in Indian rupees · Switch or pause your plan in two clicks · Secure payments powered by Razorpay</p>
   </div>
 </section>
 
@@ -324,7 +446,29 @@
   <div class="land-section__inner land-section__inner--narrow">
     <p class="eyebrow">Questions, answered.</p>
     <h2 style="margin-bottom:28px">FAQ</h2>
-    <div id="faqList"></div>
+    <!-- <details> so the answers are in the DOM and openable with no
+         JavaScript at all; the +/− glyph is CSS, see .faq-item in
+         css/pages.css. Mirrors UQ.config.faq. -->
+    <details class="faq-item">
+      <summary class="faq-item__q"><span>Does it work with Hinglish and accents?</span><span class="faq-item__icon" aria-hidden="true"></span></summary>
+      <div class="faq-item__a"><div class="faq-item__a-inner">Yes — uniqueness handles English, Hindi, and natural Hinglish. Fast talkers and strong accents are fine; you can always edit the script and captions re-match the voice.</div></div>
+    </details>
+    <details class="faq-item">
+      <summary class="faq-item__q"><span>How do captions lock to my voice?</span><span class="faq-item__icon" aria-hidden="true"></span></summary>
+      <div class="faq-item__a"><div class="faq-item__a-inner">We transcribe the clip and lock every word to the moment it is spoken, then group lines by natural rhythm. Edit the script anytime — the timing adjusts with it.</div></div>
+    </details>
+    <details class="faq-item">
+      <summary class="faq-item__q"><span>Which aspect ratios can I export?</span><span class="faq-item__icon" aria-hidden="true"></span></summary>
+      <div class="faq-item__a"><div class="faq-item__a-inner">9:16 for Reels and Shorts, 1:1 for feed posts, and 16:9 for YouTube — plus clean SRT, VTT, and TXT, or a real burned-in MP4.</div></div>
+    </details>
+    <details class="faq-item">
+      <summary class="faq-item__q"><span>How does billing work?</span><span class="faq-item__icon" aria-hidden="true"></span></summary>
+      <div class="faq-item__a"><div class="faq-item__a-inner">Every caption style is free. Pay only for captioning minutes and clean exports — a one-time credit pack or a monthly plan, both through secure Razorpay checkout (UPI, cards, netbanking).</div></div>
+    </details>
+    <details class="faq-item">
+      <summary class="faq-item__q"><span>Is my clip uploaded to a server?</span><span class="faq-item__icon" aria-hidden="true"></span></summary>
+      <div class="faq-item__a"><div class="faq-item__a-inner">Yes — your clip is uploaded so it can be transcribed accurately and, if you export an MP4, so the captions can be burned in. It is used for nothing else, is never shared, and is deleted from our servers within 24 hours. See our privacy policy for the detail.</div></div>
+    </details>
   </div>
 </section>
 
@@ -341,13 +485,14 @@
       <div>
         <img src="assets/images/uniqueness-logo.png" alt="uniqueness" style="height:22px;margin-bottom:12px" />
         <p style="font-size:12.5px;color:var(--mut);max-width:280px;line-height:1.55">A caption studio for high-performance short-form. Built for creators who care how it looks.</p>
+        <p style="font-size:12.5px;color:var(--mut);margin-top:10px"><a href="mailto:janitsingh05@gmail.com">janitsingh05@gmail.com</a></p>
       </div>
       <div class="land-foot__links">
         <div>
           <b>Product</b>
           <a href="login.html?mode=signup">Studio</a>
           <a href="templates.html">Templates</a>
-          <a href="credits.html">Pricing</a>
+          <a href="pricing.html">Pricing</a>
         </div>
         <div>
           <b>Account</b>
@@ -356,12 +501,19 @@
           <a href="plugins.html">Plugins</a>
         </div>
         <div>
+          <b>Legal</b>
+          <a href="privacy.html">Privacy</a>
+          <a href="terms.html">Terms</a>
+          <a href="refund.html">Refunds</a>
+          <a href="contact.html">Contact</a>
+        </div>
+        <div>
           <b>Learn</b>
           <a href="blog/index.html">Blog</a>
-          <a href="#faq">FAQ</a>
+          <a href="index.html#faq">FAQ</a>
         </div>
       </div>
-      <span>uniqueness.online © 2026</span>
+      <span>uniqueness.online © 2026 · Made in India 🇮🇳</span>
     </footer>
   </div>
 </section>

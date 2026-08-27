@@ -132,12 +132,44 @@ UQ.api = {
     };
   },
 
-  /* startRender(file, { lines, style, template, filename }) -> job */
+  /* Authorization header for the routes that spend money or credit. The
+     server takes the uid from this token and ignores any uid in the body
+     — see server/src/lib/auth.js. */
+  async _authHeaders() {
+    const token = UQ.db && UQ.db.idToken ? await UQ.db.idToken() : null;
+    return token ? { Authorization: 'Bearer ' + token } : {};
+  },
+
+  /* balance() -> { minutes, plan } straight from the server, which is the
+     only writer of either field. Used after a purchase instead of the
+     browser adding the minutes itself: the payment webhook has already
+     credited the account, so a local add would count the same purchase
+     twice. Returns null when there is no backend or no session. */
+  async balance() {
+    if (!this.configured()) return null;
+    const headers = await this._authHeaders();
+    if (!headers.Authorization) return null;
+    try {
+      const res = await fetch(this.url('/api/balance'), { headers });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      return null;
+    }
+  },
+
+  /* startRender(file, { lines, style, template, filename }) -> job
+     The job comes back with the new credit balance: /api/render charges
+     before it burns, and refunds itself if the render fails. */
   async startRender(file, payload) {
     const form = new FormData();
     form.append('clip', file, file.name);
     form.append('payload', JSON.stringify(payload));
-    const res = await fetch(this.url('/api/render'), { method: 'POST', body: form });
+    const res = await fetch(this.url('/api/render'), {
+      method: 'POST',
+      headers: await this._authHeaders(),
+      body: form
+    });
     return this._json(res);
   },
 

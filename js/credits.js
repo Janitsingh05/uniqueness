@@ -49,7 +49,11 @@ UQ.credits = {
     if (UQ.payments && UQ.payments.ready()) {
       el.textContent = 'Live checkout via ' + (UQ.config.payments.provider || 'Razorpay') + ' — UPI, cards & netbanking.';
     } else {
-      el.textContent = 'Payment gateway space reserved — connect Razorpay in js/config.js (payments.keyId + enabled). Demo checkout grants minutes with no real charge.';
+      /* Checkout is unreachable right now (gateway script blocked, or the
+         key is not live). Say what that means for the reader — the fix is
+         ours, not theirs, so the old build instructions that used to sit
+         here did nothing but leak internals. */
+      el.textContent = 'Checkout is temporarily unavailable. Your existing credits still work — please try again shortly, or get in touch and we will sort it out.';
     }
   },
 
@@ -100,21 +104,23 @@ UQ.credits = {
       '<div class="list-row" style="cursor:default">' +
         '<span class="feed-item__icon">✦</span>' +
         '<span class="grow"><span class="list-row__name">' + UQ.ui.esc(o.name) + '</span>' +
-        '<span class="list-row__meta">' + UQ.ui.date(o.at) + ' · ' + (o.method || 'upi').toUpperCase() + '</span></span>' +
+        '<span class="list-row__meta">' + UQ.ui.date(o.at) + ' · ' + (o.method || 'razorpay').toUpperCase() + '</span></span>' +
         '<span class="badge badge--teal">' + (o.unlimited ? 'Unlimited' : ('+' + o.minutes + ' min')) + '</span>' +
         '<span style="font-size:13.5px;font-weight:700">' + o.price + '</span>' +
       '</div>').join('');
   },
 
   openCheckout(plan) {
-    this.method = 'upi';
+    /* Razorpay reports the method it actually took; until then this is
+       just the label on the order row. */
+    this.method = 'razorpay';
     const live = UQ.payments && UQ.payments.ready();
     const minsCopy = plan.unlimited || plan.add < 0
       ? 'Unlimited captioning'
       : this.minutesLabel(plan) + ' of credit';
     const note = live
       ? 'Secure checkout via ' + (UQ.config.payments.provider || 'Razorpay') + '.'
-      : 'Payment gateway not connected — demo checkout. No real charge. Credits land immediately. Add payments.keyId in js/config.js when ready.';
+      : 'Checkout is temporarily unavailable — this run grants credit without a real charge.';
 
     const modal = UQ.ui.modal(
       '<div class="spread" style="margin-bottom:18px"><span class="modal__title">Checkout</span>' +
@@ -123,39 +129,46 @@ UQ.credits = {
         '<div><div style="font-size:14px;font-weight:700;margin-bottom:4px">' + plan.name + '</div>' +
         '<div style="font-size:12px;color:var(--mut)">' + minsCopy + '</div></div>' +
         '<div style="font-size:22px;font-weight:800;letter-spacing:-.03em">' + plan.price + '</div></div>' +
-      '<div class="eyebrow" style="margin-bottom:10px">Pay with</div>' +
-      '<div class="row" style="gap:7px;margin-bottom:14px">' +
-        '<button class="chip is-on" data-m="upi">UPI</button><button class="chip" data-m="card">Card</button></div>' +
-      '<div data-fields></div>' +
-      '<div class="inset-row" style="margin-bottom:16px"><span class="muted">Total</span><b>' + plan.price + ' incl. GST</b></div>' +
+      /* No payment fields here on purpose. This modal used to draw its own
+         "Card number" and "CVV" inputs, and its own UPI box, none of which
+         were ever read — Razorpay's checkout collects the real details on
+         its own PCI-compliant page. Fields that look like they take a card
+         number but silently discard it are both misleading and exactly the
+         thing an audit flags, so the plan, the total and the button are all
+         that belong here. */
+      '<div style="font-size:12.5px;color:var(--mut);margin-bottom:16px;line-height:1.55">' +
+        'UPI, cards, net banking and wallets are all accepted on the next screen.</div>' +
+      /* No GST line: uniqueness is not GST-registered, so no tax is
+         charged or collected and claiming a price is "inclusive of GST"
+         would be a false statement on an invoice. Restore this only
+         alongside a real GSTIN. */
+      '<div class="inset-row" style="margin-bottom:16px"><span class="muted">Total</span><b>' + plan.price + '</b></div>' +
       '<button class="btn btn--primary btn--block" data-pay>' + (live ? 'Pay ' : 'Demo pay ') + plan.price + '</button>' +
       '<div style="font-size:11.5px;color:var(--faint);margin-top:12px;line-height:1.55">' + note + '</div>',
       { dismissible: true }
     );
 
-    const fields = modal.querySelector('[data-fields]');
-    const paint = () => {
-      fields.innerHTML = this.method === 'upi'
-        ? '<input class="input" placeholder="yourname@bank" style="margin-bottom:14px" />'
-        : '<input class="input" placeholder="Card number" style="margin-bottom:9px" />' +
-          '<div class="row" style="gap:9px;margin-bottom:14px"><input class="input" placeholder="MM / YY" />' +
-          '<input class="input" placeholder="CVV" style="width:110px" /></div>';
-    };
-    paint();
-
-    modal.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => {
-      this.method = b.dataset.m;
-      modal.querySelectorAll('[data-m]').forEach(x => x.classList.toggle('is-on', x === b));
-      paint();
-    }));
     modal.querySelector('[data-x]').addEventListener('click', () => modal.remove());
     modal.querySelector('[data-pay]').addEventListener('click', e => this.pay(plan, modal, e.currentTarget));
   },
 
-  grant(plan) {
+  /* After a real payment the server has already credited the account —
+     server/src/lib/credits.js does it from the Razorpay verify call and
+     again (idempotently) from the webhook. Adding the minutes here as
+     well counted the same purchase twice, and firestore.rules now refuses
+     the write anyway, so this reads the server's number instead.
+
+     The local branch is the demo path only: no backend, no real charge. */
+  async grant(plan) {
     const mins = (plan.unlimited || plan.add < 0) ? 99999 : plan.add;
-    this.user = UQ.db.addMinutes(this.user.id, mins);
-    this.user = UQ.db.updateUser(this.user.id, { plan: plan.tier });
+    const server = await UQ.api.balance();
+    if (server) {
+      this.user = UQ.db.applyServerBalance(this.user.id, server.minutes);
+      if (server.plan) this.user = Object.assign({}, this.user, { plan: server.plan });
+    } else {
+      this.user = UQ.db.addMinutes(this.user.id, mins);
+      this.user = UQ.db.updateUser(this.user.id, { plan: plan.tier });
+    }
     UQ.db.addOrder(this.user.id, {
       name: plan.name,
       price: plan.price,
@@ -195,8 +208,8 @@ UQ.credits = {
           billing: this.billing,
           uid: this.user.id,
           method: this.method,
-          onSuccess: () => {
-            this.grant(plan);
+          onSuccess: async () => {
+            await this.grant(plan);
             this.showSuccess(plan, modal);
           },
           onDismiss: () => {
@@ -218,8 +231,8 @@ UQ.credits = {
     }
 
     /* Demo path — gateway not connected yet */
-    setTimeout(() => {
-      this.grant(plan);
+    setTimeout(async () => {
+      await this.grant(plan);
       this.showSuccess(plan, modal);
     }, 1100);
   }

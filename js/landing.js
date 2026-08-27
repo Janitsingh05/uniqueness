@@ -57,27 +57,15 @@ UQ.landing = {
     host.innerHTML = UQ.previews.box('bounce', true);
   },
 
+  /* Both price tables are in the HTML now (see index.html) so they are
+     readable with JavaScript off and by crawlers. This only chooses which
+     one is on screen — it no longer builds the cards, which is what used
+     to make the prices invisible to anything that does not run JS. */
   renderPricing() {
-    const host = document.getElementById('pricingPreview');
-    if (!host) return;
-    const plans = (this.billing === 'packs' ? UQ.config.packs : UQ.config.monthly) || [];
-    host.innerHTML = plans.map(p =>
-      '<article class="plan' + (p.hot ? ' plan--hot' : '') + '">' +
-        (p.badge ? '<span class="plan__badge' + (p.hot ? ' plan__badge--hot' : '') + '">' + p.badge + '</span>' : '') +
-        '<div class="plan__name">' + p.name + '</div>' +
-        '<div class="plan__blurb">' + p.blurb + '</div>' +
-        '<div class="plan__price"><b>' + p.price + '</b><span class="faint" style="font-size:12.5px">' + p.unit + '</span></div>' +
-        '<div class="plan__rate">' + p.rate + '</div>' +
-        '<div class="plan__mins">' + p.minutes + '</div>' +
-        '<div class="plan__feats">' + p.features.slice(0, 4).map(f =>
-          '<div class="plan__feat"><i>✓</i><span>' + f + '</span></div>'
-        ).join('') + '</div>' +
-        '<a class="btn btn--block ' + (p.free ? 'btn--quiet' : 'btn--primary') + '" href="' +
-          (p.free ? 'login.html?mode=signup' : 'credits.html') + '">' +
-          (p.free ? 'Start free' : 'Get ' + p.name) +
-        '</a>' +
-      '</article>'
-    ).join('');
+    const shown = this.billing === 'packs' ? 'packs' : 'monthly';
+    document.querySelectorAll('[data-plans]').forEach(el => {
+      el.classList.toggle('hidden', el.dataset.plans !== shown);
+    });
   },
 
   bindPricingToggle() {
@@ -93,34 +81,18 @@ UQ.landing = {
     });
   },
 
+  /* The FAQ is a list of <details> in the HTML — open/close is native, so
+     there is nothing to bind and nothing to build. Kept as a no-op rather
+     than deleted because init() calls it; the answers used to be injected
+     here, which meant they were not in the page for crawlers to read.
+     Only one panel open at a time, which is the one thing <details> does
+     not do by itself. */
   renderFaq() {
-    const host = document.getElementById('faqList');
-    if (!host) return;
-    const items = UQ.config.faq || [];
-    host.innerHTML = items.map((item, i) =>
-      '<div class="faq-item">' +
-        '<button class="faq-item__q" type="button" aria-expanded="false" data-faq="' + i + '">' +
-          '<span>' + item.q + '</span><span class="faq-item__icon">+</span>' +
-        '</button>' +
-        '<div class="faq-item__a"><div class="faq-item__a-inner">' + item.a + '</div></div>' +
-      '</div>'
-    ).join('');
-
-    host.querySelectorAll('[data-faq]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const open = btn.getAttribute('aria-expanded') === 'true';
-        host.querySelectorAll('[data-faq]').forEach(b => {
-          b.setAttribute('aria-expanded', 'false');
-          b.parentElement.classList.remove('is-open');
-          b.querySelector('.faq-item__icon').textContent = '+';
-        });
-        if (!open) {
-          btn.setAttribute('aria-expanded', 'true');
-          btn.parentElement.classList.add('is-open');
-          btn.querySelector('.faq-item__icon').textContent = '−';
-        }
-      });
-    });
+    const items = Array.from(document.querySelectorAll('details.faq-item'));
+    items.forEach(d => d.addEventListener('toggle', () => {
+      if (!d.open) return;
+      items.forEach(other => { if (other !== d) other.open = false; });
+    }));
   },
 
   /* Sticky nav shadow on scroll + the mobile drawer. Both are optional —

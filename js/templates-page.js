@@ -25,11 +25,14 @@ UQ.templatesPage = {
     }));
   },
 
+  /* The 11 cards are in templates.html now, so this only decides which
+     are on screen. Building them here was what kept every style name out
+     of the HTML — a style library that a crawler sees as an empty div. */
   renderGrid() {
-    const list = UQ.config.templates.filter(t => this.filter === 'All' || t.kind === this.filter);
-    UQ.ui.el('#tplGrid').innerHTML = list.map(t => UQ.previews.card(t)).join('');
-    UQ.ui.els('[data-tpl]', UQ.ui.el('#tplGrid')).forEach(b =>
-      b.addEventListener('click', () => { location.href = 'editor.html?tpl=' + b.dataset.tpl; }));
+    document.querySelectorAll('#tplGrid .tpl-card').forEach(card => {
+      const show = this.filter === 'All' || card.dataset.kind === this.filter;
+      card.classList.toggle('hidden', !show);
+    });
   }
 };
 

@@ -17,6 +17,13 @@
 <link rel="stylesheet" href="css/layout.css" />
 <link rel="stylesheet" href="css/components.css" />
 <link rel="stylesheet" href="css/pages.css" />
+<script>
+/* Hide the app until auth resolves — see the flash-guard note in
+   css/base.css. Inline and blocking on purpose: a deferred script runs
+   after the markup has already painted, which is exactly the flash this
+   prevents. js/shell.js clears the attribute once a user is confirmed. */
+document.documentElement.setAttribute('data-auth-pending','');
+</script>
 </head>
 <body>
 
@@ -68,7 +75,7 @@
         </article>
         <article class="card card--pad">
           <h3 style="font-size:13.5px;margin-bottom:9px">Payment gateway</h3>
-          <p style="font-size:13px;color:var(--mut);line-height:1.6">Razorpay hook is ready in <span class="mono">js/config.js</span> → <span class="mono">payments</span>. Paste your key, set <span class="mono">enabled: true</span>, finish <span class="mono">UQ.payments.checkout</span>.</p>
+          <p style="font-size:13px;color:var(--mut);line-height:1.6">Secure payments powered by Razorpay. UPI, cards, net banking and wallets are all accepted, and your card details never touch our servers.</p>
         </article>
       </div>
     </main>

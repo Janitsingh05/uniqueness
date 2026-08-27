@@ -30,7 +30,10 @@ UQ.payments = {
   async checkout(plan, opts) {
     opts = opts || {};
     if (!this.ready()) {
-      const err = new Error('Payment gateway not connected — add Razorpay keyId and set payments.enabled = true in js/config.js');
+      /* User-facing: this string reaches a toast. The operator-facing
+         version of it belongs in the console, not on the page. */
+      console.error('[payments] Razorpay is not configured — set payments.keyId and payments.enabled in js/config.js.');
+      const err = new Error('Checkout is temporarily unavailable. Please try again shortly.');
       if (opts.onError) opts.onError(err);
       throw err;
     }

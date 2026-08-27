@@ -5,6 +5,8 @@
      POST /api/render            clip + lines + style -> burned-in MP4
      GET  /api/render/:id        progress
      GET  /api/render/:id/file   download
+     POST /api/spend             deduct caption credit (signed-in)
+     GET  /api/balance           credit balance (signed-in)
      GET  /api/health            what this server can actually do
 
    The studio works without any of this (Whisper runs in the browser).
@@ -23,6 +25,7 @@ import { translateRouter } from './routes/translate.js';
 import { paymentsRouter } from './routes/payments.js';
 import { webhookRouter } from './routes/webhook.js';
 import { spellcheckRouter } from './routes/spellcheck.js';
+import { accountRouter } from './routes/account.js';
 import { adminConfigured } from './lib/firebase-admin.js';
 
 ensureDirs();
@@ -64,6 +67,7 @@ app.use('/api', renderRouter);
 app.use('/api', translateRouter);
 app.use('/api', paymentsRouter);
 app.use('/api', spellcheckRouter);
+app.use('/api', accountRouter);
 
 app.use((req, res) => res.status(404).json({ error: 'Not found: ' + req.method + ' ' + req.path }));
 

@@ -175,6 +175,91 @@ export async function creditReferral(payingUid, opts) {
   }
 }
 
+/* spendMinutes(uid, minutes, { reason }) — the only path that may take
+   credit off an account. users/{uid}.minutes is server-only in
+   firestore.rules, so the browser cannot do this for itself any more;
+   before that lock it could, which made the balance a suggestion rather
+   than a limit.
+
+   Reads and writes inside one transaction so two exports fired at the
+   same moment cannot both pass the same balance check. Refuses rather
+   than clamping when the balance is short: a caller that asked for more
+   than it can pay should hear "no", not silently get a partial render.
+
+   -> { ok: true, minutes } | { ok: false, reason, code, minutes } */
+export async function spendMinutes(uid, minutes, opts = {}) {
+  if (!adminConfigured()) return { ok: false, reason: 'accounts not configured', code: 'ACCOUNTS_UNAVAILABLE' };
+  if (!uid) return { ok: false, reason: 'no uid', code: 'AUTH_REQUIRED' };
+
+  const cost = Math.max(0, Math.round((Number(minutes) || 0) * 10) / 10);
+  if (!cost) return { ok: true, minutes: null, charged: 0 };
+
+  const firestore = db();
+  const userRef = firestore.collection('users').doc(uid);
+
+  try {
+    return await firestore.runTransaction(async (tx) => {
+      const snap = await tx.get(userRef);
+      if (!snap.exists) return { ok: false, reason: 'no such user', code: 'NO_ACCOUNT' };
+
+      const data = snap.data() || {};
+      const balance = Number(data.minutes) || 0;
+      /* Unlimited plans carry a sentinel balance rather than a flag, so
+         they simply never run the counter down. */
+      if (balance >= 99999) return { ok: true, minutes: balance, charged: 0, unlimited: true };
+
+      if (balance < cost) {
+        return {
+          ok: false,
+          code: 'INSUFFICIENT_CREDIT',
+          reason: `This clip needs ${cost} minutes of credit and ${Math.round(balance * 10) / 10} are left.`,
+          minutes: balance
+        };
+      }
+
+      const next = Math.round((balance - cost) * 10) / 10;
+      tx.update(userRef, { minutes: next });
+      tx.set(userRef.collection('events').doc(), {
+        icon: '◔', tone: 'purple', at: Date.now(),
+        text: `${cost} min used — ${opts.reason || 'caption export'}`
+      });
+      return { ok: true, minutes: next, charged: cost };
+    });
+  } catch (err) {
+    return { ok: false, reason: err.message, code: 'SPEND_FAILED' };
+  }
+}
+
+/* refundMinutes(uid, minutes) — put credit back when the work the client
+   paid for did not actually happen (render failed, job errored). Kept
+   separate from creditUser() because that path is for purchases and is
+   keyed on a Razorpay payment id; this one has no payment behind it. */
+export async function refundMinutes(uid, minutes, opts = {}) {
+  if (!adminConfigured() || !uid) return { ok: false };
+  const back = Math.max(0, Math.round((Number(minutes) || 0) * 10) / 10);
+  if (!back) return { ok: true };
+
+  const firestore = db();
+  const userRef = firestore.collection('users').doc(uid);
+  try {
+    return await firestore.runTransaction(async (tx) => {
+      const snap = await tx.get(userRef);
+      if (!snap.exists) return { ok: false };
+      const balance = Number((snap.data() || {}).minutes) || 0;
+      if (balance >= 99999) return { ok: true, minutes: balance };
+      const next = Math.round((balance + back) * 10) / 10;
+      tx.update(userRef, { minutes: next });
+      tx.set(userRef.collection('events').doc(), {
+        icon: '↺', tone: 'teal', at: Date.now(),
+        text: `${back} min refunded — ${opts.reason || 'export did not finish'}`
+      });
+      return { ok: true, minutes: next };
+    });
+  } catch (err) {
+    return { ok: false, reason: err.message };
+  }
+}
+
 /* getUserPlan(uid) -> 'Free' | 'Starter' | 'Creator' | 'Studio' | null.
    null means "could not verify" (no uid, Admin not configured, no such
    user) — callers must treat that the same as 'Free', never as paid.

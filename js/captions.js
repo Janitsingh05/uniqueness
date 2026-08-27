@@ -222,6 +222,14 @@ UQ.captions = {
     if (!raw.length) return null;
 
     if (opts.timedWords && opts.timedWords.length) {
+      /* Same word count means the edit was a rewrite in place — a spelling
+         fix, casing, punctuation. Those words are still the words that were
+         spoken, so relabel the existing stamps and keep the exact timing.
+         Re-fitting here would trade Whisper's per-word times for an even
+         spread across the span, which visibly drifts off the voice. */
+      if (opts.timedWords.length === raw.length) {
+        return opts.timedWords.map((w, i) => ({ text: raw[i], start: w.start, end: w.end }));
+      }
       const t0 = opts.timedWords[0].start;
       const t1 = opts.timedWords[opts.timedWords.length - 1].end;
       return this.fitWordsToSpan(raw, t0, t1);
@@ -284,6 +292,49 @@ UQ.captions = {
     stageEl.style.setProperty('--cap-dur', (0.34 / (style.speed || 1)).toFixed(2) + 's');
   },
 
+  /* Rough advance width per character as a fraction of the font size.
+     Neither this preview nor libass breaks inside a word, so a word wider
+     than the caption box spills off the frame — "TRANSFORMATION" showing
+     up as "ANSFORMATIO". _fitToBox shrinks the line just enough to fit.
+     server/src/lib/ass.js carries the same table so the burned-in MP4
+     shrinks identically — change both together or the two drift apart. */
+  _NARROW: 'IJfijlt.,:;!\'"`()[]{}|-',
+  _WIDE: 'MW@%',
+
+  _charEm(ch) {
+    if (ch === ' ') return 0.28;
+    if (this._NARROW.indexOf(ch) >= 0) return 0.34;
+    if (this._WIDE.indexOf(ch) >= 0) return 0.95;
+    if (ch >= 'a' && ch <= 'z') return 0.58;
+    return 0.66;
+  },
+
+  _textEm(s) {
+    let n = 0;
+    const str = String(s == null ? '' : s);
+    for (let i = 0; i < str.length; i++) n += this._charEm(str[i]);
+    return n;
+  },
+
+  /* The widest single word decides the fit — everything shorter wraps. */
+  _fitToBox(capEl, words) {
+    capEl.style.fontSize = '';
+    const cs = getComputedStyle(capEl);
+    const px = parseFloat(cs.fontSize) || 0;
+    /* The stroke is drawn outside the glyphs, so it eats into the box —
+       subtracted here exactly as ass.js subtracts its outline, which is
+       what keeps the preview and the burned-in MP4 on the same size. */
+    const outline = (parseFloat(cs.getPropertyValue('--cap-stroke')) || 0) * px;
+    const box = capEl.clientWidth
+      - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0)
+      - outline * 2;
+    if (!(box > 0) || !px) return;
+    let widest = 0;
+    for (const w of words) widest = Math.max(widest, this._textEm(w));
+    const needed = widest * px;
+    if (widest && needed > box) capEl.style.fontSize = Math.max(8, Math.floor(px * (box / needed))) + 'px';
+  },
+
   /* Render the caption for time t into `capEl` (a .cap element).
      Rebuilds only when the visible word changes, so CSS animations
      restart exactly once per word. */
@@ -301,9 +352,11 @@ UQ.captions = {
     const lineProgress = tpl.mode === 'type'
       ? Math.min(.999, Math.max(0, (state.time - active.line.start) / Math.max(.001, active.line.end - active.line.start)))
       : 0;
-    const key = tpl.mode === 'type'
+    /* The box width rides along in the key so resizing the stage re-fits
+       the text — nothing else about the caption has changed. */
+    const key = (tpl.mode === 'type'
       ? active.line.i + ':' + Math.ceil(lineProgress * 40)
-      : active.line.i + ':' + active.index;
+      : active.line.i + ':' + active.index) + '@' + capEl.clientWidth;
     if (capEl.dataset.key === key) return;
     capEl.dataset.key = key;
 
@@ -319,6 +372,12 @@ UQ.captions = {
       });
       capEl.innerHTML = parts.join('');
     }
+    /* Match ass.js: 'word' templates show one word alone so each is sized
+       on its own, while line templates hold the whole line and take one
+       size for it. */
+    this._fitToBox(capEl, tpl.mode === 'word'
+      ? [cased(active.line.words[active.index] || '')]
+      : active.line.words.map(cased));
     if (state.style.emoji) capEl.insertAdjacentHTML('beforeend', '<span class="emoji">' + state.style.emoji + '</span>');
   }
 };

@@ -18,7 +18,8 @@ import { upload } from '../lib/upload.js';
 import { buildAss } from '../lib/ass.js';
 import { probe, burnCaptions } from '../lib/ffmpeg.js';
 import { createJob, getJob, updateJob, publicJob } from '../lib/jobs.js';
-import { getUserPlan } from '../lib/credits.js';
+import { getUserPlan, spendMinutes, refundMinutes } from '../lib/credits.js';
+import { verifyToken } from '../lib/auth.js';
 import { dirs } from '../config.js';
 
 export const renderRouter = Router();
@@ -59,22 +60,47 @@ renderRouter.post('/render', upload.single('clip'), async (req, res) => {
   const base = path.parse(payload.filename || req.file.originalname || 'clip').name
     .replace(/[^\w.-]+/g, '-').slice(0, 60) || 'clip';
 
+  /* Burning an MP4 is the paid action, so this is where credit is taken.
+     The uid comes from the signed ID token — the body's uid decides
+     nothing any more. */
+  const uid = await verifyToken(req);
+  if (!uid) {
+    await fs.unlink(req.file.path).catch(() => {});
+    return res.status(401).json({
+      error: 'Please sign in again — your session could not be verified.',
+      code: 'AUTH_REQUIRED'
+    });
+  }
+
+  const durationMinutes = Math.max(0.1, Math.round((media.duration / 60) * 10) / 10);
+  const charge = await spendMinutes(uid, durationMinutes, { reason: `export · ${base}` });
+  if (!charge.ok) {
+    await fs.unlink(req.file.path).catch(() => {});
+    const status = charge.code === 'INSUFFICIENT_CREDIT' ? 402 : 400;
+    return res.status(status).json({ error: charge.reason, code: charge.code, minutes: charge.minutes });
+  }
+
   const job = createJob({
     videoPath: req.file.path,
     filename: `${base}-captioned.mp4`,
-    durationMinutes: Math.max(0.1, Math.round((media.duration / 60) * 10) / 10)
+    durationMinutes
   });
 
-  /* Answer immediately; the client polls from here. */
-  res.status(202).json(publicJob(job));
+  /* Answer immediately; the client polls from here. The new balance rides
+     along so the editor can show it without a second round trip. */
+  res.status(202).json({ ...publicJob(job), minutes: charge.minutes });
 
-  runRender(job.id, { payload, media }).catch(err => {
+  runRender(job.id, { payload, media, uid }).catch(async err => {
     console.error('[render]', err);
     updateJob(job.id, { status: 'error', error: err.message, step: 'Failed' });
+    /* Nothing was delivered, so nothing should have been charged. */
+    if (charge.charged) {
+      await refundMinutes(uid, charge.charged, { reason: 'export failed' }).catch(() => {});
+    }
   });
 });
 
-async function runRender(jobId, { payload, media }) {
+async function runRender(jobId, { payload, media, uid }) {
   const job = getJob(jobId);
   if (!job) return;
 
@@ -84,10 +110,13 @@ async function runRender(jobId, { payload, media }) {
   const width = media.width || 1080;
   const height = media.height || 1920;
 
-  /* Server-verified, not client-declared — see getUserPlan()'s own note.
-     A missing/unrecognised plan (no uid sent, Admin not configured, no
-     such user) fails safe as Free: watermark stays on. */
-  const plan = await getUserPlan(payload.uid);
+  /* The plan is looked up server-side, but that was only half the job:
+     the uid it was looked up from came out of the request body, and a
+     uid is not a secret. Anyone could paste a paid account's uid and
+     render watermark-free. It now comes from the verified ID token
+     (req.uid, set by requireUser) and the body's uid is ignored.
+     No token still fails safe as Free: watermark stays on. */
+  const plan = await getUserPlan(uid);
   const watermark = plan !== 'Starter' && plan !== 'Creator' && plan !== 'Studio';
 
   const { content, events } = buildAss({

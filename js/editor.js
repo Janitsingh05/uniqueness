@@ -337,7 +337,7 @@ UQ.editor = {
            fires on Whisper's own detected language when the server reports
            one; the browser-Whisper fallback has no such signal and falls
            back to converting any Devanagari it sees, same as before. */
-        const isHindi = result.language ? result.language === 'hi' : true;
+        const isHindi = result.language ? this.isHindiLang(result.language) : true;
         const hi = isHindi ? this.hinglishify(result.text, timed) : null;
         s.transcript = hi ? hi.text : result.text;
         s.draft = s.transcript;
@@ -500,6 +500,15 @@ UQ.editor = {
     this._scriptTimer = setTimeout(() => this.softResyncFromScript(), 850);
   },
 
+  /* Is this Whisper's "Hindi"? The provider's verbose_json reports the
+     detected language as a full English name ("Hindi"), not the ISO-639-1
+     code ('hi') the server's contract documents, so accept either. A plain
+     === 'hi' matched neither shape in practice, which meant every Hindi
+     clip skipped romanization and stayed in Devanagari. */
+  isHindiLang(lang) {
+    return /^(hi|hin|hindi)$/i.test(String(lang || '').trim());
+  },
+
   /* Devanagari script -> Hinglish (Roman), text and (if given) timedWords
      kept in exact lockstep. Relabels each already-timed word in place
      instead of a whole-string convert-then-re-fit — transliteration never
@@ -595,14 +604,20 @@ UQ.editor = {
       } catch (e) { return; }
     }
     s.transcript = s.draft;
+    /* An edit that kept the word count is the same speech, respelled, so the
+       existing per-word stamps still hold — retimefromScript relabels them
+       and we must not then throw them away for an energy guess. Only a
+       changed word count needs the voice re-fit below. */
+    const sameLength = s.timedWords
+      && s.timedWords.length === s.transcript.trim().split(/\s+/).filter(Boolean).length;
     s.timedWords = UQ.captions.retimefromScript(s.transcript, {
+      timedWords: s.timedWords,
       segments: s.segments,
       speechTotal: s.speechTotal,
-      duration: s.duration,
-      timedWords: null
+      duration: s.duration
     });
     /* Prefer energy-based lines when we have segments — clearer voice match after edits */
-    if (s.segments && s.speechTotal > 0.2) {
+    if (!sameLength && s.segments && s.speechTotal > 0.2) {
       s.timedWords = null;
     }
     s.note = 'Captions auto-adjusted to your script and the voice.';
@@ -643,6 +658,9 @@ UQ.editor = {
     s.transcript = text;
     clearTimeout(this._scriptTimer);
 
+    /* See softResyncFromScript: a same-length edit keeps the exact stamps. */
+    const sameLength = s.timedWords
+      && s.timedWords.length === text.split(/\s+/).filter(Boolean).length;
     s.timedWords = UQ.captions.retimefromScript(text, {
       timedWords: s.timedWords,
       segments: s.vocalSync ? s.segments : null,
@@ -651,6 +669,11 @@ UQ.editor = {
     });
     this.recompute();
     this.renderAll();
+
+    if (sameLength) {
+      UQ.ui.toast('Captions adjusted to your script');
+      return;
+    }
 
     if (s.file && s.vocalSync) {
       s.note = 'Re-matching your script to the voice…';
@@ -1035,7 +1058,15 @@ UQ.editor = {
         s.renderDone = true;
         s.renderUrl = (result && result.url) || null;
         s.renderName = (result && result.filename) || null;
-        this.user = UQ.db.spendMinutes(this.user.id, minutes);
+        /* The server already charged this render and told us the balance
+           it landed on — mirror that rather than subtracting again here,
+           which would double-count. Only the local demo path (no backend,
+           no account) still does its own arithmetic. */
+        if (result && Number.isFinite(result.minutes)) {
+          this.user = UQ.db.applyServerBalance(this.user.id, result.minutes);
+        } else {
+          this.user = UQ.db.spendMinutesLocal(this.user.id, minutes);
+        }
         UQ.db.addEvent(this.user.id, { icon: '↓', tone: 'teal', text: 'Rendered a video — ' + minutes + ' min used' });
         UQ.shell.refresh('editor', 'Caption editor');
         this.renderExportPanel();

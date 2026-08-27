@@ -16,6 +16,13 @@
 <link rel="stylesheet" href="css/layout.css" />
 <link rel="stylesheet" href="css/components.css" />
 <link rel="stylesheet" href="css/pages.css" />
+<script>
+/* Hide the app until auth resolves — see the flash-guard note in
+   css/base.css. Inline and blocking on purpose: a deferred script runs
+   after the markup has already painted, which is exactly the flash this
+   prevents. js/shell.js clears the attribute once a user is confirmed. */
+document.documentElement.setAttribute('data-auth-pending','');
+</script>
 </head>
 <body>
 

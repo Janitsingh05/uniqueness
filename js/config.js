@@ -128,10 +128,10 @@ UQ.config = {
 
   faq: [
     { q: 'Does it work with Hinglish and accents?', a: 'Yes — uniqueness handles English, Hindi, and natural Hinglish. Fast talkers and strong accents are fine; you can always edit the script and captions re-match the voice.' },
-    { q: 'How do captions lock to my voice?', a: 'On upload we transcribe the clip on-device and lock every word to the moment it is spoken, then group lines by natural rhythm. Edit the script anytime — timing adjusts with it.' },
+    { q: 'How do captions lock to my voice?', a: 'We transcribe the clip and lock every word to the moment it is spoken, then group lines by natural rhythm. Edit the script anytime — the timing adjusts with it.' },
     { q: 'Which aspect ratios can I export?', a: '9:16 for Reels and Shorts, 1:1 for feed posts, and 16:9 for YouTube — plus clean SRT, VTT, and TXT, or a real burned-in MP4.' },
     { q: 'How does billing work?', a: 'Every caption style is free. Pay only for captioning minutes and clean exports — a one-time credit pack or a monthly plan, both through secure Razorpay checkout (UPI, cards, netbanking).' },
-    { q: 'Is my clip uploaded to a server?', a: 'Voice sync and captioning run in your browser by default and never leave your device. Signing in also unlocks higher-accuracy server-side transcription and real burned-in MP4 exports when you want them.' }
+    { q: 'Is my clip uploaded to a server?', a: 'Yes — your clip is uploaded so it can be transcribed accurately and, if you export an MP4, so the captions can be burned in. It is used for nothing else, is never shared, and is deleted from our servers within 24 hours. See our privacy policy for the detail.' }
   ],
 
   /* Referral economics. sharePercent must match server/src/config.js's

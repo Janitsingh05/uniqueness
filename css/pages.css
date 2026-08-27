@@ -197,15 +197,22 @@
 .reveal.is-visible { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) { .reveal.reveal-pending { opacity: 1; transform: none; transition: none; } }
 
+/* The FAQ is a <details>/<summary> list so the answers sit in the HTML and
+   open with no JavaScript at all — they used to be injected by landing.js,
+   which kept them out of reach of crawlers. The +/- glyph is drawn here
+   rather than written into the markup so [open] alone drives it. */
 .faq-item { border-bottom: 1px solid var(--rule); }
-.faq-item__q { display: flex; justify-content: space-between; align-items: center; gap: 16px; width: 100%; padding: 18px 0; font-size: 14.5px; font-weight: 700; text-align: left; color: var(--ink); }
+.faq-item__q { display: flex; justify-content: space-between; align-items: center; gap: 16px; width: 100%; padding: 18px 0; font-size: 14.5px; font-weight: 700; text-align: left; color: var(--ink); cursor: pointer; list-style: none; }
+.faq-item__q::-webkit-details-marker { display: none; }
+.faq-item__q::marker { content: ''; }
 .faq-item__q:hover { color: var(--purple-deep); }
+.faq-item__q:focus-visible { outline: 2px solid var(--purple); outline-offset: 3px; border-radius: 4px; }
 .faq-item__icon { font-size: 18px; color: var(--faint); flex-shrink: 0; }
-.faq-item.is-open .faq-item__icon { color: var(--purple-deep); }
-.faq-item__a { display: grid; grid-template-rows: 0fr; overflow: hidden; transition: grid-template-rows .3s cubic-bezier(.4, 0, .2, 1); font-size: 13.5px; color: var(--mut); line-height: 1.65; }
-.faq-item.is-open .faq-item__a { grid-template-rows: 1fr; }
-.faq-item__a-inner { min-height: 0; padding-bottom: 18px; }
-@media (prefers-reduced-motion: reduce) { .faq-item__a { transition: none; } }
+.faq-item__icon::before { content: '+'; }
+.faq-item[open] .faq-item__icon { color: var(--purple-deep); }
+.faq-item[open] .faq-item__icon::before { content: '−'; }
+.faq-item__a { font-size: 13.5px; color: var(--mut); line-height: 1.65; }
+.faq-item__a-inner { padding-bottom: 18px; }
 
 .land-foot { align-items: flex-start; padding-top: 36px; margin-top: 36px; border-top: 1px solid var(--rule); }
 .land-foot__links { display: flex; gap: 48px; flex-wrap: wrap; }

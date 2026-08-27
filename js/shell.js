@@ -11,11 +11,21 @@ window.UQ = window.UQ || {};
 UQ.shell = {
   user: null,
 
-  /* Redirects to login.html when nobody is signed in. */
+  /* Redirects to login.html when nobody is signed in, remembering where
+     they were headed so login can send them back instead of dumping
+     everyone on the dashboard. UQ.start() has already awaited Firebase's
+     auth state by the time this runs, so a null user here means really
+     signed out — not "not resolved yet". */
   requireUser() {
     const u = UQ.db.currentUser();
-    if (!u) { location.href = 'login.html'; return null; }
+    if (!u) {
+      const here = location.pathname.split('/').pop() || 'dashboard.html';
+      const dest = here.replace(/\.html$/, '');
+      location.replace('login.html?redirect=' + encodeURIComponent(dest));
+      return null;
+    }
     this.user = u;
+    document.documentElement.removeAttribute('data-auth-pending');
     return u;
   },
 
@@ -68,6 +78,13 @@ UQ.shell = {
           '<div class="grow"><div style="font-size:12.5px;font-weight:700">' + UQ.ui.esc(u.name) + '</div>' +
             '<div class="who__mail">' + UQ.ui.esc(u.email) + '</div></div>' +
           '<button data-signout title="Sign out" style="color:var(--faint);font-size:13px">⏻</button>' +
+        '</div>' +
+        /* The app pages have a sidebar, not a footer, so the legal links
+           live here — every signed-in page needs to reach them, and
+           Razorpay expects them reachable from anywhere on the site. */
+        '<div class="sidebar__legal">' +
+          '<a href="privacy.html">Privacy</a><a href="terms.html">Terms</a>' +
+          '<a href="refund.html">Refunds</a><a href="contact.html">Contact</a>' +
         '</div>' +
       '</div>';
 

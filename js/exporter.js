@@ -86,12 +86,14 @@ UQ.exporter = {
 
     try {
       opts.onProgress(3, 0);
+      /* No uid in here any more — the server reads it from the signed ID
+         token instead, because a uid in the body was something anyone
+         could swap for a paid account's. */
       const job = await UQ.api.startRender(opts.file, {
         lines: opts.lines,
         style: opts.style,
         template: opts.template,
-        filename: opts.filename,
-        uid: opts.uid
+        filename: opts.filename
       });
 
       const done = await UQ.api.waitForRender(job.id, j => {
@@ -102,7 +104,11 @@ UQ.exporter = {
 
       opts.onProgress(100, 3);
       const url = UQ.api.downloadUrl(done);
-      opts.onDone(done.durationMinutes || this.minutesFor(opts.duration), { url, filename: done.filename });
+      /* job.minutes is the balance the server landed on after charging
+         this render — passed through so the caller mirrors it instead of
+         deducting a second time locally. */
+      opts.onDone(done.durationMinutes || this.minutesFor(opts.duration),
+        { url, filename: done.filename, minutes: job.minutes });
     } catch (err) {
       console.warn('[render]', err);
       fail(err.message || 'Render failed.');

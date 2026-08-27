@@ -10,12 +10,20 @@
       ".firebaserc",
       "**/.*",
       "**/node_modules/**",
-      "README.md"
+      "README.md",
+      "server/**",
+      "Dockerfile",
+      "llms.txt.bak"
     ],
     "headers": [
       {
         "source": "**/*.@(js|css)",
-        "headers": [{ "key": "Cache-Control", "value": "max-age=3600" }]
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=3600"
+          }
+        ]
       }
     ]
   }

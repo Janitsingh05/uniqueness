@@ -53,6 +53,40 @@ const FONTS = {
    out the same size as the preview. */
 const SIZE_SCALE = { punch: 1.7, editorial: 0.95, bar: 0.7 };
 
+/* Rough advance width per character, as a fraction of the font size, for
+   the bold sans the studio ships. Both renderers break between words and
+   neither breaks inside one, so a single word wider than the frame gets
+   drawn straight off both edges — "TRANSFORMATION" burning in as
+   "ANSFORMATIO". fitFontSize below shrinks the offending line just enough
+   to fit. Kept deliberately generous: slightly small text reads fine,
+   clipped text does not. UQ.captions._textEm is the same table — change
+   both together or the preview and the export drift apart. */
+const NARROW = 'IJfijlt.,:;!\'"`()[]{}|-';
+const WIDE = 'MW@%';
+
+function charEm(ch) {
+  if (ch === ' ') return 0.28;
+  if (NARROW.includes(ch)) return 0.34;
+  if (WIDE.includes(ch)) return 0.95;
+  if (ch >= 'a' && ch <= 'z') return 0.58;
+  return 0.66;
+}
+
+function textEm(s) {
+  let n = 0;
+  for (const ch of String(s == null ? '' : s)) n += charEm(ch);
+  return n;
+}
+
+/* The widest single word decides the fit — everything shorter wraps. */
+function fitFontSize(words, fontSize, available) {
+  let widest = 0;
+  for (const w of words) widest = Math.max(widest, textEm(w));
+  const needed = widest * fontSize;
+  if (!widest || needed <= available || available <= 0) return fontSize;
+  return Math.max(8, Math.floor(fontSize * (available / needed)));
+}
+
 /* Per-word times, falling back to an even split when the engine could not
    produce them (no speech detected, hand-typed script). */
 function wordTimes(line) {
@@ -122,9 +156,23 @@ export function buildAss({ lines, style, width, height, template, duration, wate
     events.push(`Dialogue: 0,${assTime(start)},${assTime(end)},Cap,,0,0,0,,${text}`);
   };
 
+  /* What a line actually has room for: the frame less both side margins,
+     less the outline that is drawn outside the glyphs. */
+  const available = Math.max(1, width - sideMargin * 2 - outline * 2);
+
   for (const line of lines || []) {
     if (!line || !Array.isArray(line.words) || !line.words.length) continue;
     const times = wordTimes(line);
+
+    /* Line templates hold the whole line on screen while the highlight
+       moves along it, so they take one size for the line — sizing per word
+       there would make the line jump about. 'word' templates show each
+       word alone, so each is free to take the largest size that fits. */
+    const sizeFor = ws => {
+      const fitted = fitFontSize(ws, fontSize, available);
+      return fitted < fontSize ? `\\fs${fitted}` : '';
+    };
+    const fs = mode === 'word' ? '' : sizeFor(line.words.map(cased));
 
     for (let i = 0; i < line.words.length; i++) {
       const t = times[i];
@@ -132,20 +180,21 @@ export function buildAss({ lines, style, width, height, template, duration, wate
 
       if (mode === 'word') {
         /* Punch / Neon / Bounce: one word owns the frame. */
-        push(t.start, t.end, `{\\c${highlight}}` + assText(cased(line.words[i])) + assText(sticker));
+        const word = cased(line.words[i]);
+        push(t.start, t.end, `{${sizeFor([word])}\\c${highlight}}` + assText(word) + assText(sticker));
         continue;
       }
 
       if (mode === 'type') {
         /* Typewriter: the line grows one word at a time. */
         const shown = line.words.slice(0, i + 1).join(' ');
-        push(t.start, t.end, `{\\c${base}}` + assText(cased(shown)) + assText(sticker));
+        push(t.start, t.end, `{${fs}\\c${base}}` + assText(cased(shown)) + assText(sticker));
         continue;
       }
 
       /* Line templates: hold the line, tint the word being spoken. */
       const parts = line.words.map((w, j) =>
-        (j === i ? `{\\c${highlight}}` : `{\\c${base}}`) + assText(cased(w))
+        `{${fs}` + (j === i ? `\\c${highlight}` : `\\c${base}`) + '}' + assText(cased(w))
       );
       push(t.start, t.end, parts.join(' ') + assText(sticker));
     }

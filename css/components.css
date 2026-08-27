@@ -169,3 +169,10 @@
 }
 .is-waiting { animation: wait-pulse 1.5s ease-out infinite; }
 @media (prefers-reduced-motion: reduce) { .is-waiting { animation: none; outline: 2px solid var(--purple); outline-offset: 2px; } }
+
+/* Legal links at the foot of the app sidebar. The studio pages have no
+   <footer> of their own, and Privacy/Terms/Refunds/Contact have to be
+   reachable from every page. */
+.sidebar__legal { display: flex; flex-wrap: wrap; gap: 4px 10px; padding: 12px 4px 2px; }
+.sidebar__legal a { font-size: 11px; color: var(--faint); }
+.sidebar__legal a:hover { color: var(--purple-deep); }

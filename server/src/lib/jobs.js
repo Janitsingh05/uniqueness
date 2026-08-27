@@ -9,7 +9,8 @@
 
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
-import { config } from '../config.js';
+import path from 'node:path';
+import { config, dirs } from '../config.js';
 
 const jobs = new Map();
 
@@ -54,9 +55,34 @@ export function publicJob(job) {
 }
 
 /* Finished renders are large. Drop them, and their files, on a timer. */
+/* Anything left in the work directories past the retention window, whoever
+   put it there. The job-map sweep below only knows about jobs this process
+   started, so a restart used to strand every file belonging to the jobs it
+   forgot — which is exactly how uploads from weeks earlier were still on
+   disk. The privacy policy promises clips are deleted; that promise has to
+   survive a redeploy, so this walks the directories themselves. */
+async function sweepDisk(cutoff) {
+  let removed = 0;
+  for (const dir of Object.values(dirs)) {
+    let names;
+    try { names = await fs.readdir(dir); } catch (e) { continue; }
+    for (const name of names) {
+      const full = path.join(dir, name);
+      try {
+        const st = await fs.stat(full);
+        if (!st.isFile() || st.mtimeMs > cutoff) continue;
+        await fs.unlink(full);
+        removed++;
+      } catch (e) { /* vanished under us, or busy — next pass gets it */ }
+    }
+  }
+  if (removed) console.log(`[cleanup] removed ${removed} expired file(s)`);
+  return removed;
+}
+
 export function startCleanup() {
   const ms = Math.max(1, config.retentionMinutes) * 60 * 1000;
-  const timer = setInterval(async () => {
+  const run = async () => {
     const cutoff = Date.now() - ms;
     for (const [id, job] of jobs) {
       if (job.createdAt > cutoff) continue;
@@ -65,7 +91,12 @@ export function startCleanup() {
       }
       jobs.delete(id);
     }
-  }, 5 * 60 * 1000);
+    await sweepDisk(cutoff);
+  };
+  /* Once at boot, so a restart clears whatever the previous process left
+     behind instead of waiting out the first interval. */
+  run().catch(err => console.warn('[cleanup]', err.message));
+  const timer = setInterval(() => run().catch(err => console.warn('[cleanup]', err.message)), 5 * 60 * 1000);
   timer.unref?.();
   return timer;
 }

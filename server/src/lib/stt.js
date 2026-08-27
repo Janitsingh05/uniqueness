@@ -52,6 +52,23 @@ const LANGS = {
   Vietnamese: 'vi'
 };
 
+/* Whisper's verbose_json reports the language it heard as a full English
+   name ("Hindi"), while this module's contract promises ISO-639-1 ('hi').
+   LANGS above is already that mapping, just keyed the other way round. */
+const CODE_BY_NAME = Object.fromEntries(
+  Object.entries(LANGS)
+    .filter(([name, code]) => code && name !== 'Hinglish')
+    .map(([name, code]) => [name.toLowerCase(), code])
+);
+
+function toIsoCode(reported) {
+  const raw = String(reported || '').trim();
+  if (!raw) return '';
+  /* Already a code (some providers return one) — pass it through. */
+  if (/^[a-z]{2}$/i.test(raw)) return raw.toLowerCase();
+  return CODE_BY_NAME[raw.toLowerCase()] || raw.toLowerCase();
+}
+
 async function callProvider(filePath, { language, prompt } = {}) {
   const bytes = await fs.readFile(filePath);
   const form = new FormData();
@@ -176,6 +193,6 @@ export async function transcribe(videoPath, opts = {}) {
        not one was requested — lets the client romanize Hindi specifically
        without also catching Marathi/Nepali/Sanskrit, which share the same
        Devanagari script but shouldn't be forced into Hinglish spelling. */
-    language: detectedLang || ''
+    language: toIsoCode(detectedLang)
   };
 }

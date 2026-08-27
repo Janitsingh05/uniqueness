@@ -63,3 +63,43 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .stack { display: flex; flex-direction: column; gap: 12px; }
 .grow { flex: 1; min-width: 0; }
 .hidden { display: none !important; }
+
+/* ---- Signed-out flash guard -------------------------------------------
+   App pages are static HTML, so their markup paints the moment it parses
+   — a signed-out visitor would see the whole studio for a beat before the
+   redirect fired. An inline <script> in each gated page's <head> sets
+   data-auth-pending before first paint; js/shell.js clears it once a real
+   user is confirmed, and the redirect replaces the page otherwise. The
+   spinner is inert markup-free CSS so it needs nothing in the body. */
+html[data-auth-pending] body > * { visibility: hidden; }
+html[data-auth-pending] body {
+  background: var(--bg);
+  min-height: 100vh;
+}
+html[data-auth-pending] body::after {
+  content: '';
+  position: fixed; top: 50%; left: 50%;
+  width: 26px; height: 26px; margin: -13px 0 0 -13px;
+  border: 2px solid var(--line, rgba(255,255,255,.18));
+  border-top-color: var(--acc, #7C4DFF);
+  border-radius: 50%;
+  animation: authSpin .7s linear infinite;
+}
+@keyframes authSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  html[data-auth-pending] body::after { animation-duration: 2.4s; }
+}
+
+/* ---- Skip to content --------------------------------------------------
+   Keyboard users land on the nav on every page load; without this they
+   tab through the whole header before reaching the content. Off-screen
+   until focused, then pinned top-left. */
+.skip-link {
+  position: absolute; left: 8px; top: -60px; z-index: 200;
+  padding: 10px 16px; border-radius: 0 0 10px 10px;
+  background: var(--purple, #7C4DFF); color: #fff;
+  font-size: 13px; font-weight: 700; text-decoration: none;
+  transition: top .15s ease;
+}
+.skip-link:focus { top: 0; }
+@media (prefers-reduced-motion: reduce) { .skip-link { transition: none; } }

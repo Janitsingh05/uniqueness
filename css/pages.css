@@ -249,7 +249,7 @@
 }
 
 /* ---------------- Auth (login.html) ---------------- */
-.auth { min-height: 100vh; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); background: var(--card); }
+.auth { min-height: 100vh; min-height: 100dvh; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); background: var(--card); }
 .auth__aside { padding: clamp(28px, 5vw, 54px); display: flex; flex-direction: column; justify-content: space-between; background: linear-gradient(160deg, #F9F6FF, #EEF6FA); min-height: 340px; }
 .auth__aside img { height: 26px; width: auto; }
 .auth__pitch { font-size: clamp(26px, 3.6vw, 38px); font-weight: 800; letter-spacing: -.04em; line-height: 1.08; margin-bottom: 16px; }
@@ -445,4 +445,41 @@
 @media (prefers-reduced-motion: reduce) {
   .marquee__track { animation: none !important; }
   .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+}
+
+/* ---- Small Android phones ------------------------------------------------
+   360px is the reported CSS width of a very large share of budget Android
+   handsets, and the smallest breakpoint here was 440px — so the most common
+   phone on this site was being served near-tablet spacing. */
+@media (max-width: 380px) {
+  .land-section__inner { padding-left: 16px; padding-right: 16px; }
+  .hero__inner { padding-left: 16px; padding-right: 16px; }
+  .hero h1 { font-size: clamp(30px, 9vw, 38px); letter-spacing: -.035em; }
+  .hero p { font-size: 15.5px; }
+  .site-nav__inner { padding: 10px 12px; }
+  .site-nav .btn { padding: 9px 11px; font-size: 12px; }
+  .land-foot__links { gap: 26px; }
+  .plan { padding: 18px 16px; }
+  .land-stat b { font-size: 30px; }
+  h2 { font-size: 22px; }
+  .page { padding-left: 14px; padding-right: 14px; }
+}
+
+/* ---- Touch targets, fourth pass — the editor -----------------------------
+   The studio packs a lot of controls into a narrow column and several were
+   under the 44px floor on a phone: the play button at 38px, colour swatches
+   at 32, word chips at 30. This lives in pages.css rather than
+   components.css because pages.css loads last and owns .transport__play's
+   size — the same rules in components.css were being overridden.
+   The swatch keeps its 32px visual size and gains the hit area from padding,
+   so the palette still reads as a palette. */
+@media (pointer: coarse) {
+  .transport__play { width: var(--tap-min); height: var(--tap-min); }
+  .word-chip, .chip--emoji, .swatch { min-width: var(--tap-min); min-height: var(--tap-min); }
+  .word-chip, .chip--emoji { display: inline-flex; align-items: center; justify-content: center; }
+  .swatch { padding: 6px; background-clip: content-box; }
+  .topbar a, .topbar button { min-height: var(--tap-min); display: inline-flex; align-items: center; }
+  /* these scroll boxes are unusable on a phone at 104-118px tall */
+  .font-grid, .word-chips { max-height: none; }
+  .panel button, .panel a.btn { min-height: var(--tap-min); }
 }

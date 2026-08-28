@@ -176,3 +176,92 @@
 .sidebar__legal { display: flex; flex-wrap: wrap; gap: 4px 10px; padding: 12px 4px 2px; }
 .sidebar__legal a { font-size: 11px; color: var(--faint); }
 .sidebar__legal a:hover { color: var(--purple-deep); }
+
+/* ---- Touch input sizing --------------------------------------------------
+   Safari on iOS zooms the viewport when you focus a field whose font-size is
+   below 16px, and there is no way to undo that zoom without a reload. The
+   design's 13-14px fields did exactly that on every form. Only touch devices
+   get the bump, so the desktop typography is untouched. */
+@media (pointer: coarse) {
+  .input, .select, .textarea { font-size: 16px; }
+  .select { padding: 12px 12px; }
+  .textarea { padding: 13px; }
+}
+
+/* ---- Touch target sizes --------------------------------------------------
+   A .btn measured ~40px tall and a .chip ~32px; the accessibility floor is
+   44px (Apple) / 48px (Google). Anything below that is a target people miss
+   and re-tap, which reads as the site being broken rather than small.
+   min-height rather than more padding, so the desktop proportions hold. */
+@media (pointer: coarse) {
+  :root { --tap-min: 44px; }
+  /* Everything the browser measured under 44px at 360px wide: buttons,
+     chips, the segmented toggles, footer and nav links, the brand lockup,
+     and the inline text buttons. */
+  .btn, .chip, .nav-item, .dl-row, .line-row, .list-row, .segmented > button,
+  .site-nav__link, .site-nav__brand, .land-foot__links a, .btn--link,
+  .faq-item__q, .tile, .tpl-card__body .btn {
+    min-height: var(--tap-min);
+  }
+  /* a short label like "1:1" left the segmented button 41px wide */
+  .segmented > button { min-width: var(--tap-min); }
+  .btn, .chip, .segmented > button, .site-nav__link, .land-foot__links a, .btn--link {
+    display: inline-flex; align-items: center;
+  }
+  /* the brand is an image link; give it a tappable box without resizing the mark */
+  .site-nav__brand { display: inline-flex; align-items: center; padding: 0 4px; }
+  .btn--sm { min-height: 40px; }
+  /* icon-only controls need width as well as height */
+  .site-nav__burger, .topbar__burger, .sidebar__close, .nav-drawer__close, .cap-resize {
+    min-width: var(--tap-min); min-height: var(--tap-min);
+  }
+  /* a range slider's thumb is the target — the default is tiny */
+  .range { height: var(--tap-min); }
+}
+
+/* ---- Touch targets, second pass ------------------------------------------
+   What a real browser still measured under 44px at 360px after the first
+   round. Footer links become full-width rows rather than word-width ones,
+   because a 40px-wide target in a column of links is easy to miss even when
+   it is tall enough. */
+@media (pointer: coarse) {
+  /* footer link columns: the whole row is the target, not just the word */
+  /* The footer columns are shrink-to-fit, so a full-width link was still
+     only as wide as the longest word in that column (40px for "About").
+     A floor on the column makes every link a 44x44 target. */
+  .land-foot__links > div { min-width: var(--tap-min); }
+  .land-foot__links a { display: flex; align-items: center; width: 100%; }
+
+  /* the copyright line carries a mailto link */
+  .site-foot a, .land-foot span a { display: inline-flex; align-items: center; min-height: var(--tap-min); }
+
+  /* sign-in page: the legal row and the brand lockup */
+  .legal-row { line-height: 1.9; }
+  .legal-row a {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: var(--tap-min); padding: 0 8px;
+  }
+  .auth__aside a { display: inline-flex; align-items: center; min-height: var(--tap-min); }
+
+  /* skip link is itself a control, and was 40px */
+  .skip-link { min-height: var(--tap-min); display: inline-flex; align-items: center; }
+}
+
+/* The referral link field: small mono on desktop, but it used to set that
+   size inline, which no stylesheet can override — so it zoomed iOS on focus. */
+.mono-sm { font-family: var(--mono); font-size: 12.5px; }
+
+/* ---- Touch targets, third pass — the signed-in pages ---------------------
+   Measured on the real app pages at 360px. .btn--sm was capped at 40px by
+   the previous pass, which is still under the floor; the sidebar's sign-out
+   control measured 13x20. */
+@media (pointer: coarse) {
+  .btn--sm { min-height: var(--tap-min); }
+  .mono-sm { font-size: 16px; }
+  .range { font-size: 16px; }
+  /* the icon-only controls inside the sidebar footer and topbar */
+  .who button, .topbar button, .sidebar__foot button, .credit-card .btn {
+    min-width: var(--tap-min); min-height: var(--tap-min);
+  }
+  .who button { display: inline-flex; align-items: center; justify-content: center; }
+}

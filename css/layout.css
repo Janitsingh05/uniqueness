@@ -3,7 +3,7 @@
    Shell markup is injected by js/shell.js.
    ============================================================ */
 
-.app-shell { display: flex; min-height: 100vh; background: var(--bg); }
+.app-shell { display: flex; min-height: 100vh; min-height: 100dvh; background: var(--bg); }
 
 /* ---------- Sidebar ---------- */
 .sidebar {
@@ -119,4 +119,15 @@
 
   /* Dashboard's "Recent projects" card is hard-coded to span 2 columns. */
   .page section[style*="span 2"] { grid-column: auto !important; }
+}
+
+/* Below 1000px the sidebar is a drawer parked at translateX(-104%). Moved
+   off-screen is not hidden: every link in it stayed in the tab order and in
+   the accessibility tree, so tabbing from the topbar walked into an invisible
+   menu. visibility removes it from both and still animates.
+   (css/pages.css does the same for the public nav drawer.) */
+@media (max-width: 1000px) {
+  .sidebar:not(.is-open) { visibility: hidden; }
+  .sidebar { transition: transform .22s cubic-bezier(.4, 0, .2, 1), visibility 0s linear .22s; }
+  .sidebar.is-open { visibility: visible; transition-delay: 0s; }
 }

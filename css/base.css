@@ -75,6 +75,7 @@ html[data-auth-pending] body > * { visibility: hidden; }
 html[data-auth-pending] body {
   background: var(--bg);
   min-height: 100vh;
+  min-height: 100dvh;   /* dvh excludes the mobile address bar; vh does not */
 }
 html[data-auth-pending] body::after {
   content: '';
@@ -135,3 +136,12 @@ img[src$="uniqueness-logo.png"] { width: auto; }
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
+
+/* ---- No sideways scroll --------------------------------------------------
+   One over-wide element anywhere drags the whole page sideways, and on a
+   phone that shows as a permanently offset layout the reader has to fight.
+   Belt and braces: clip at the root, and stop long unbroken strings (a URL,
+   a file name, a Hinglish word) from forcing the width in the first place. */
+html, body { overflow-x: hidden; max-width: 100%; }
+body { overflow-wrap: break-word; }
+pre, code, .mono { overflow-wrap: anywhere; }

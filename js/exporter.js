@@ -15,12 +15,31 @@ window.UQ = window.UQ || {};
 UQ.exporter = {
   STEPS: ['Getting your video ready', 'Adding your captions', 'Rendering the final video', 'Almost there'],
 
+  /* A timecode is the one thing a player will not forgive. A NaN or a
+     negative reaching here produced "NaN:NaN:NaN,NaN" or "-1:-1:-3,000",
+     and one malformed cue makes most players reject the whole file — so
+     the value is clamped at the last gate rather than trusted. */
   stamp(t, comma) {
-    const h = String(Math.floor(t / 3600)).padStart(2, '0');
-    const m = String(Math.floor((t % 3600) / 60)).padStart(2, '0');
-    const s = String(Math.floor(t % 60)).padStart(2, '0');
-    const ms = String(Math.floor((t % 1) * 1000)).padStart(3, '0');
-    return h + ':' + m + ':' + s + (comma ? ',' : '.') + ms;
+    let v = Number(t);
+    if (!isFinite(v) || v < 0) v = 0;
+    const h = String(Math.floor(v / 3600)).padStart(2, '0');
+    const m = String(Math.floor((v % 3600) / 60)).padStart(2, '0');
+    const s = String(Math.floor(v % 60)).padStart(2, '0');
+    const ms = Math.round((v % 1) * 1000);
+    /* 999.7ms must not round up into ":60,000" */
+    if (ms >= 1000) return this.stamp(Math.floor(v) + 1, comma);
+    return h + ':' + m + ':' + s + (comma ? ',' : '.') + String(ms).padStart(3, '0');
+  },
+
+  /* Caption text shares the file with the cue structure. A literal "-->"
+     reads as a timecode and a newline splits one cue into two — both come
+     straight from whatever the transcript or a translation contains, so
+     neither can be assumed away. */
+  cueText(str) {
+    return String(str == null ? '' : str)
+      .replace(/-->/g, '->')
+      .replace(/[\r\n]+/g, ' ')
+      .trim();
   },
 
   download(filename, body, type) {
@@ -43,14 +62,19 @@ UQ.exporter = {
     const base = this.basename(opts && opts.filename);
 
     if (kind === 'txt') {
-      return this.download(base + '.txt', lines.map(l => l.words.join(' ')).join('\n'));
+      return this.download(base + '.txt', lines.map(l => this.cueText(l.words.join(' '))).join('\n'));
     }
     const comma = kind === 'srt';
-    const body = lines.map((l, i) =>
-      (comma ? (i + 1) + '\n' : '') +
-      this.stamp(l.start, comma) + ' --> ' + this.stamp(l.end, comma) + '\n' +
-      text(l.words.join(' '))
-    ).join('\n\n');
+    /* An empty cue is invalid in both formats and a zero-length one is
+       skipped by most players — drop both rather than ship a broken file. */
+    const usable = (lines || []).filter(l => l && l.words && this.cueText(l.words.join(' ')));
+    const body = usable.map((l, i) => {
+      const start = Math.max(0, Number(l.start) || 0);
+      const end = Math.max(start + 0.05, Number(l.end) || 0);
+      return (comma ? (i + 1) + '\n' : '') +
+        this.stamp(start, comma) + ' --> ' + this.stamp(end, comma) + '\n' +
+        this.cueText(text(l.words.join(' ')));
+    }).join('\n\n');
     this.download(base + '.' + kind, (comma ? '' : 'WEBVTT\n\n') + body + '\n');
   },
 

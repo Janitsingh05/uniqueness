@@ -55,7 +55,12 @@ UQ.captions = {
 
     const chunks = [];
     for (let i = 0; i < w.length; i += n) chunks.push(w.slice(i, i + n));
-    const dur = opts.duration || Math.max(2, w.length * 0.42);
+    /* A duration that is absent, zero, negative or NaN all mean the same
+       thing here: we do not know how long the clip is. Falling back on a
+       reading-speed estimate beats emitting a line whose end precedes
+       its start, which is what a negative value used to produce. */
+    const asked = Number(opts.duration);
+    const dur = isFinite(asked) && asked > 0 ? asked : Math.max(2, w.length * 0.42);
     const per = dur / chunks.length;
     return chunks.map((ws, i) => ({ words: ws, start: i * per, end: (i + 1) * per, i }));
   },

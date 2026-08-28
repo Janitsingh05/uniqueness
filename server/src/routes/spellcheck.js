@@ -21,6 +21,15 @@ spellcheckRouter.post('/polish-hinglish', async (req, res) => {
   if (words.length > 500) {
     return res.status(400).json({ error: 'Too many words in one request (max 500) — send one line/caption chunk at a time.' });
   }
+  /* Callers zip the reply back onto timedWords by index and use each entry
+     as caption text. Anything that is not a string came back unchanged and
+     would have been rendered as "[object Object]" or "null". */
+  if (!words.every(w => typeof w === 'string')) {
+    return res.status(400).json({ error: 'words must all be strings.' });
+  }
+  if (words.some(w => w.length > 80)) {
+    return res.status(400).json({ error: 'A single word cannot be longer than 80 characters.' });
+  }
 
   const result = await polishHinglishWords(words);
   res.json(result);

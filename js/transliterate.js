@@ -174,6 +174,9 @@ UQ.transliterate = {
   /* toHinglish(text) — word by word, so English words already mixed
      into the sentence (real Hinglish) are left exactly as typed. */
   toHinglish(text) {
+    /* Callers join the result straight into caption text, so this always
+       hands back a string — it used to return null unchanged. */
+    if (text == null) return '';
     if (!text) return text;
     return text.split(/(\s+)/).map(tok =>
       /[ऀ-ॿ]/.test(tok) ? this.wordToRoman(tok) : tok

@@ -20,6 +20,15 @@ translateRouter.post('/translate', async (req, res) => {
   if (!target) {
     return res.status(400).json({ error: 'target language is required.' });
   }
+  /* An unrecognised code used to come back 200 with the text untouched —
+     indistinguishable from a successful translation, so the editor happily
+     offered an English .srt labelled Tamil. Fail loudly instead. */
+  if (!/^[a-z]{2}(-[A-Za-z]{2,4})?$/.test(String(target))) {
+    return res.status(400).json({ error: `"${String(target).slice(0, 20)}" is not a language code we recognise.` });
+  }
+  if (source && String(source) === String(target)) {
+    return res.status(400).json({ error: 'Source and target languages are the same.' });
+  }
 
   try {
     const result = await translateLines(lines, { source: source || 'en', target });

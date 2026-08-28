@@ -243,7 +243,16 @@ UQ.editor = {
     if (/could not reach|network|Failed to fetch/i.test(raw)) {
       return 'Could not reach the caption server. Check your connection and try again — subtitle exports still work offline.';
     }
-    return raw || 'Captioning did not finish. Paste your script below and hit Apply to captions.';
+    /* Anything unrecognised is almost certainly a stack-flavoured string
+       ("TypeError: x is not a function", "ECONNREFUSED 127.0.0.1:443").
+       Returning it verbatim put developer text in front of a creator,
+       which is what this whole function exists to stop. Only a sentence
+       that already reads like prose is passed through; the rest goes to
+       the console for us and a plain sentence to them. */
+    const prose = /^[A-Z][^{}<>]*[.!?]$/.test(raw.trim()) && !/[A-Za-z]+Error|:\d|\bat \w+ \(|_[A-Z]{2,}/.test(raw);
+    if (prose) return raw;
+    if (raw) console.warn('[captions] unhandled failure:', raw);
+    return 'Captioning did not finish. Paste your script below and hit Apply to captions, or try the clip again.';
   },
 
   /* ---------- file ---------- */

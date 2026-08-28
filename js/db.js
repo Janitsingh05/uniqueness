@@ -346,6 +346,15 @@ UQ.db = {
     if (!u) return null;
     return this.updateUser(id, { minutes: Math.round((u.minutes + minutes) * 10) / 10 });
   },
+  /* Re-read this account from Firestore. Reads are allowed by the rules,
+     writes to minutes/plan are not — so this is how the browser catches up
+     after the server has moved a balance. */
+  async refreshUser() {
+    if (this.mode !== 'firebase' || !this._user) return this.currentUser();
+    try { await this._hydrate(this._user.id); } catch (e) {}
+    return this._user;
+  },
+
   /* Spending is the server's call, not ours. users/{uid}.minutes is
      server-only in firestore.rules, so writing it from here would simply
      be rejected — and before that lock it was not, which made the whole

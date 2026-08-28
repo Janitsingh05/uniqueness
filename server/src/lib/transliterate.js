@@ -128,6 +128,9 @@ function wordToRoman(word) {
 const HAS_DEVANAGARI = /[ऀ-ॿ]/;
 
 export function toHinglish(text) {
+    /* Callers join the result straight into caption text, so this always
+       hands back a string — it used to return null unchanged. */
+    if (text == null) return '';
   if (!text || !HAS_DEVANAGARI.test(text)) return text;
   return text.split(/(\s+)/).map(tok => (HAS_DEVANAGARI.test(tok) ? wordToRoman(tok) : tok)).join('');
 }

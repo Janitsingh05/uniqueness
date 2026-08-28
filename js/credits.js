@@ -161,11 +161,28 @@ UQ.credits = {
      The local branch is the demo path only: no backend, no real charge. */
   async grant(plan) {
     const mins = (plan.unlimited || plan.add < 0) ? 99999 : plan.add;
-    const server = await UQ.api.balance();
+    /* The webhook can land a moment after checkout closes, so give the
+       server a couple of tries before concluding it is unreachable. */
+    let server = null;
+    for (let attempt = 0; attempt < 3 && !server; attempt++) {
+      server = await UQ.api.balance();
+      if (!server && attempt < 2) await new Promise(r => setTimeout(r, 900));
+    }
+
     if (server) {
       this.user = UQ.db.applyServerBalance(this.user.id, server.minutes);
       if (server.plan) this.user = Object.assign({}, this.user, { plan: server.plan });
+    } else if (UQ.db.mode === 'firebase') {
+      /* minutes and plan are server-only in firestore.rules, so the old
+         fallback wrote two updates that were rejected and swallowed,
+         leaving the page showing a balance that never happened. Re-read
+         the account instead — the payment webhook credits it regardless
+         of whether this browser could reach the API. */
+      this.user = (await UQ.db.refreshUser()) || this.user;
+      UQ.ui.toast('Payment received — your balance may take a moment to appear.');
     } else {
+      /* Local demo mode: no server and no real charge, so local
+         arithmetic is the only thing that can move the number. */
       this.user = UQ.db.addMinutes(this.user.id, mins);
       this.user = UQ.db.updateUser(this.user.id, { plan: plan.tier });
     }

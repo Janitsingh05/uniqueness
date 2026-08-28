@@ -83,8 +83,9 @@ UQ.shell = {
            live here — every signed-in page needs to reach them, and
            Razorpay expects them reachable from anywhere on the site. */
         '<div class="sidebar__legal">' +
-          '<a href="privacy.html">Privacy</a><a href="terms.html">Terms</a>' +
-          '<a href="refund.html">Refunds</a><a href="contact.html">Contact</a>' +
+          '<a href="about.html">About</a><a href="privacy.html">Privacy</a>' +
+          '<a href="terms.html">Terms</a><a href="refund.html">Refunds</a>' +
+          '<a href="contact.html">Contact</a>' +
         '</div>' +
       '</div>';
 

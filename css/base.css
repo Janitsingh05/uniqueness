@@ -103,3 +103,27 @@ html[data-auth-pending] body::after {
 }
 .skip-link:focus { top: 0; }
 @media (prefers-reduced-motion: reduce) { .skip-link { transition: none; } }
+
+/* Keyboard focus has to be visible on everything interactive. Buttons here
+   are styled <button>/<a>, which lose the UA outline as soon as a custom
+   background lands on them. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--purple, #7C4DFF);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Every logo now declares its intrinsic 1312x300 so the browser reserves the
+   right box and nothing shifts on first paint. Each place that draws it sets
+   a height and lets the width follow — but a couple (the drawer head, the
+   footer lockup) only set height, and with a width attribute present that
+   would render a 1312px-wide, 22px-tall logo. Pinned by source so no context
+   can miss it. */
+img { max-width: 100%; }
+img[src$="uniqueness-logo.png"] { width: auto; }

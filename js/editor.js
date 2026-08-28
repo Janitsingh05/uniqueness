@@ -116,7 +116,21 @@ UQ.editor = {
   bindStatic() {
     this.input.addEventListener('change', e => this.loadFile(e.target.files && e.target.files[0]));
     UQ.ui.el('#pickFile').addEventListener('click', () => this.input.click());
+    /* "Run diagnostics" is developer tooling, not something to hand a
+       creator who just wants captions. Hidden unless ?debug=1 is on the
+       URL — which is also what support can ask someone to add. */
+    this.debug = new URLSearchParams(location.search).get('debug') === '1';
     UQ.ui.el('#diagBtn').addEventListener('click', () => UQ.diag.open(this.state.file));
+    if (!this.debug) {
+      /* Both entry points to the diagnostics modal: the "Run diagnostics"
+         button in the sync card, and the "Why?" next to a failure. The
+         failure text now says what to do on its own, so the modal is only
+         there for someone we have asked to add ?debug=1. */
+      ['#diagBtn', '#diagBtn2'].forEach(sel => {
+        const el = UQ.ui.el(sel);
+        if (el) el.classList.add('hidden');
+      });
+    }
     UQ.ui.el('#saveProject').addEventListener('click', () => this.saveProject());
     UQ.ui.el('#playBtn').addEventListener('click', () => this.togglePlay());
     UQ.ui.el('#safeBtn').addEventListener('click', () => { this.state.safe = !this.state.safe; this.renderStage(); });
@@ -124,7 +138,17 @@ UQ.editor = {
       const r = e.currentTarget.getBoundingClientRect();
       this.seek(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * (this.state.duration || 8));
     });
-    this.video.addEventListener('loadedmetadata', () => { this.state.duration = this.video.duration || 0; this.recompute(); this.renderAll(); });
+    this.video.addEventListener('loadedmetadata', () => {
+      this.state.duration = this.video.duration || 0;
+      /* Advisory, not a limit — nothing server-side caps duration, but a
+         long clip on the free render tier is slow enough to look hung. */
+      const longMin = ((UQ.config.limits || {}).longClipMinutes) || 10;
+      if (this.state.duration > longMin * 60) {
+        UQ.ui.toast(`That is a ${Math.round(this.state.duration / 60)} minute clip — captioning and export will take a while.`);
+      }
+      this.recompute();
+      this.renderAll();
+    });
     this.video.addEventListener('ended', () => { this.state.playing = false; this.renderTransport(); });
 
     UQ.ui.els('[data-ratio]').forEach(b => b.addEventListener('click', () => {
@@ -183,11 +207,59 @@ UQ.editor = {
     UQ.ui.els('[data-panel]').forEach(p => p.classList.toggle('hidden', p.dataset.panel !== tab));
   },
 
+  /* Turn a failure into something the reader can act on. Every branch says
+     what went wrong AND what to do about it — "Render failed: 413" told
+     people nothing they could use. Matched on the message because the
+     failure can come from three places (this file, the server, or the
+     browser's own decoder) and they do not share an error type. */
+  explainFailure(err) {
+    const raw = (err && err.message) || String(err || '');
+    const cfg = (UQ.config && UQ.config.limits) || {};
+
+    if (/no audio track|nothing to transcribe/i.test(raw)) {
+      return 'This clip has no audio track, so there is nothing to caption. Export it again with sound, or paste your script below and hit Apply to captions.';
+    }
+    if (/over the .* limit|LIMIT_FILE_SIZE|413/i.test(raw)) {
+      return `That clip is over the ${cfg.maxUploadMb || 500}MB limit. Trim it, or export a smaller version — 1080p is plenty for captions.`;
+    }
+    if (/could not read audio|decodeAudioData|not a video or audio/i.test(raw)) {
+      return `We could not read this file. Try re-exporting it as ${cfg.formats || 'MP4, MOV, WEBM, M4A or WAV'}.`;
+    }
+    if (/took too long|timed out|timeout/i.test(raw)) {
+      return 'The caption server took too long to answer — usually a long clip on a busy queue. Try again, or split the clip into shorter pieces.';
+    }
+    if (/rate limited/i.test(raw)) {
+      return 'Speech-to-text is briefly rate limited. Wait a minute and try again — nothing was charged.';
+    }
+    if (/no credit|quota|billing|insufficient/i.test(raw)) {
+      return 'This clip needs more captioning credit than the account has left. Top up from Credits & plans, then run it again.';
+    }
+    if (/sign in again|session could not be verified|AUTH_REQUIRED/i.test(raw)) {
+      return 'Your session expired. Refresh the page and sign in again — your clip and script are still here.';
+    }
+    if (/no speech|nothing was heard/i.test(raw)) {
+      return 'We could not hear clear speech in this clip. Check the audio is not silent or drowned in music — or paste your script below and hit Apply to captions.';
+    }
+    if (/could not reach|network|Failed to fetch/i.test(raw)) {
+      return 'Could not reach the caption server. Check your connection and try again — subtitle exports still work offline.';
+    }
+    return raw || 'Captioning did not finish. Paste your script below and hit Apply to captions.';
+  },
+
   /* ---------- file ---------- */
   loadFile(file) {
     if (!file) return;
+    const lim = (UQ.config && UQ.config.limits) || {};
     if (!UQ.handoff.isMedia(file)) {
-      UQ.ui.toast('That file is not a video or audio clip — try MP4, MOV, WEBM, M4A or WAV');
+      UQ.ui.toast(`That file is not a video or audio clip — try ${lim.formats || 'MP4, MOV, WEBM, M4A or WAV'}`);
+      return;
+    }
+    /* Checked here rather than after the upload: the server rejects it
+       anyway, and a 500MB round trip is a slow way to find out. */
+    const maxBytes = (lim.maxUploadMb || 500) * 1024 * 1024;
+    if (file.size > maxBytes) {
+      const mb = Math.round(file.size / 1024 / 1024);
+      UQ.ui.toast(`That clip is ${mb}MB — the limit is ${lim.maxUploadMb || 500}MB. Trim it or export a smaller version.`);
       return;
     }
     const btn = UQ.ui.el('#pickFile');
@@ -369,14 +441,14 @@ UQ.editor = {
           this.renderTransport();
         }
       } else {
-        this.showFailure(s.note || 'No speech was heard in this clip.');
+        this.showFailure(this.explainFailure(s.note || 'no speech'));
         UQ.ui.toast('No speech found — paste lyrics and Apply');
       }
     } catch (err) {
       if (stale()) return;
       console.warn(err);
       UQ.diag.note(err);
-      s.note = (err && err.message) || 'Auto-caption failed. Paste your script and hit Apply to captions.';
+      s.note = this.explainFailure(err);
       this.showFailure(s.note);
       this.renderSyncCard();
       UQ.ui.toast('Could not auto-caption — paste script & Apply');

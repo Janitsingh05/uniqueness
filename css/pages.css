@@ -433,3 +433,16 @@
   .article__body { font-size: 15.5px; }
   .article__body h2 { font-size: 21px; margin: 34px 0 14px; }
 }
+
+/* Closed drawer is moved off-screen, not removed, so its links stayed in the
+   tab order and in the accessibility tree — tabbing out of the header walked
+   into an invisible menu. visibility:hidden takes it out of both, and the
+   transition keeps the slide-in intact. */
+.nav-drawer:not(.is-open) { visibility: hidden; }
+.nav-drawer { transition: visibility 0s linear .28s; }
+.nav-drawer.is-open { visibility: visible; transition-delay: 0s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee__track { animation: none !important; }
+  .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+}

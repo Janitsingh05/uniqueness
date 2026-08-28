@@ -16,10 +16,29 @@ UQ.landing = {
     this.renderCompare();
     this.renderPricing();
     this.renderFaq();
+    this.renderVoices();
     this.bindPricingToggle();
     this.bindNav();
     this.bindReveal();
     this.bindCounters();
+    this.bindPreviewIdling();
+  },
+
+  /* Only animate the previews that are actually on screen. Eight loop on
+     the homepage and eleven in the style gallery; running them all at once
+     is real battery on the mid-range Android phones this audience uses.
+     No IntersectionObserver (very old browser) means everything animates,
+     which is exactly the behaviour this replaces — so nothing regresses. */
+  bindPreviewIdling() {
+    const tiles = document.querySelectorAll('.preview');
+    if (!tiles.length) return;
+    if (!('IntersectionObserver' in window)) return;
+
+    tiles.forEach(t => t.classList.add('is-idle'));
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => e.target.classList.toggle('is-idle', !e.isIntersecting));
+    }, { rootMargin: '120px' });
+    tiles.forEach(t => io.observe(t));
   },
 
   /* A refer-and-earn link points here (root domain + ?r=CODE), not
@@ -66,6 +85,35 @@ UQ.landing = {
     document.querySelectorAll('[data-plans]').forEach(el => {
       el.classList.toggle('hidden', el.dataset.plans !== shown);
     });
+  },
+
+  /* Testimonials, if there are any. An empty UQ.config.testimonials leaves
+     the section removed from the DOM entirely — the page is honest about
+     having no social proof yet rather than filling the space with quotes
+     nobody said. Populate the config and this renders itself. */
+  renderVoices() {
+    const section = document.getElementById('voices');
+    if (!section) return;
+    const list = (UQ.config.testimonials || []).filter(t => t && t.quote && t.name);
+    if (!list.length) { section.remove(); return; }
+
+    const esc = s => String(s).replace(/[&<>"]/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    document.getElementById('voicesGrid').innerHTML = list.map(t =>
+      '<figure class="card card--pad" style="margin:0">' +
+        '<blockquote style="font-size:14px;line-height:1.65;color:var(--body);margin:0 0 14px">' +
+          esc(t.quote) +
+        '</blockquote>' +
+        '<figcaption class="row" style="gap:10px">' +
+          (t.avatar ? '<img src="' + esc(t.avatar) + '" alt="" width="34" height="34" loading="lazy" style="border-radius:50%;object-fit:cover" />' : '') +
+          '<span><b style="display:block;font-size:13px">' + esc(t.name) + '</b>' +
+          '<span style="font-size:12px;color:var(--mut)">' +
+            [t.handle, t.role].filter(Boolean).map(esc).join(' · ') +
+          '</span></span>' +
+        '</figcaption>' +
+      '</figure>').join('');
+    section.classList.remove('hidden');
   },
 
   bindPricingToggle() {

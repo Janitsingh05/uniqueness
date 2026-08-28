@@ -41,6 +41,9 @@ UQ.auth = {
     const googleBtn = UQ.ui.el('#googleSignIn');
     if (googleBtn) googleBtn.addEventListener('click', () => this.googleSignIn());
 
+    const forgot = UQ.ui.el('#forgotPw');
+    if (forgot) forgot.addEventListener('click', () => this.resetPassword());
+
     this.setMode(this.mode);
   },
 
@@ -55,6 +58,8 @@ UQ.auth = {
     UQ.ui.el('#authSwitchText').textContent = signup ? 'Already have an account?' : 'New here?';
     UQ.ui.el('#authSwitch').textContent = signup ? 'Sign in' : 'Create one free';
     if (signup && this.presetRef) UQ.ui.el('#fRef').value = this.presetRef;
+    /* "Forgot your password?" only makes sense on the sign-in tab. */
+    UQ.ui.els('[data-signin-only]').forEach(el => el.classList.toggle('hidden', signup));
     this.showError('');
   },
 
@@ -100,6 +105,41 @@ UQ.auth = {
     }
   },
 
+  /* Firebase sends the mail. The reply is identical whether or not the
+     address has an account — otherwise this box tells a stranger which of
+     your users exist. */
+  async resetPassword() {
+    const email = UQ.ui.el('#fEmail').value.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      return this.showError('Type your email address above first, then hit "Forgot your password?".');
+    }
+    const btn = UQ.ui.el('#forgotPw');
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    this.showError('');
+    try {
+      await UQ.db.sendPasswordReset(email);
+      this.showNotice('If an account exists for ' + email + ', a reset link is on its way. Check spam if it does not arrive in a minute.');
+    } catch (err) {
+      this.showError(err.message || 'Could not send the reset email.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = label;
+    }
+  },
+
+  showNotice(msg) {
+    let box = UQ.ui.el('#authNotice');
+    if (!box) {
+      box = UQ.ui.make('div', { class: 'alert alert--info', id: 'authNotice' });
+      box.style.marginBottom = '14px';
+      this.error.parentNode.insertBefore(box, this.error);
+    }
+    box.textContent = msg;
+    box.classList.remove('hidden');
+  },
+
   async googleSignIn() {
     const btn = UQ.ui.el('#googleSignIn');
     const label = btn.textContent;
@@ -114,6 +154,13 @@ UQ.auth = {
     } catch (err) {
       btn.classList.remove('btn--busy');
       btn.textContent = label;
+      /* A sign-in button that can never work is worse than no button —
+         take it off the page rather than let people keep clicking it. */
+      if (err && err.providerDisabled) {
+        btn.classList.add('hidden');
+        const divider = btn.nextElementSibling;
+        if (divider) divider.classList.add('hidden');
+      }
       this.showError(err.message || 'Could not sign in with Google.');
     }
   }

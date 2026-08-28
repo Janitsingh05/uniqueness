@@ -222,7 +222,12 @@ UQ.db = {
      Firestore itself and only writes a fresh profile the first time a
      given Google account shows up, exactly like _fbSignUp does. */
   async signInWithGoogle(referral) {
-    if (this.mode !== 'firebase') throw new Error('Google sign-in needs Firebase to be connected — see js/firebase-config.js.');
+    if (this.mode !== 'firebase') {
+      /* User-facing string: the fix is ours, not theirs. The operator note
+         belongs in the console. */
+      console.error('[auth] Google sign-in unavailable — Firebase is not connected (js/firebase-config.js).');
+      throw new Error('Google sign-in is unavailable right now. Use your email and password instead.');
+    }
 
     const provider = new firebase.auth.GoogleAuthProvider();
     let cred;
@@ -232,6 +237,14 @@ UQ.db = {
       if (err.code === 'auth/popup-closed-by-user') throw new Error('Sign-in was closed before finishing.');
       if (err.code === 'auth/popup-blocked') throw new Error('Your browser blocked the sign-in popup — allow popups for this site and try again.');
       if (err.code === 'auth/account-exists-with-different-credential') throw new Error('An account with this email already exists using a different sign-in method — sign in with email/password instead.');
+      /* The Google provider has to be switched on by hand in the Firebase
+         console. Until it is, every click lands here — so say something
+         useful and let auth.js take the dead button off the page. */
+      if (err.code === 'auth/operation-not-allowed' || err.code === 'auth/configuration-not-found') {
+        const e = new Error('Google sign-in is not available yet — create an account with your email instead, it takes a moment.');
+        e.providerDisabled = true;
+        throw e;
+      }
       throw new Error(err.message || 'Could not sign in with Google.');
     }
 
@@ -283,6 +296,24 @@ UQ.db = {
     const d = this.read();
     d.session = null;
     this.write(d);
+  },
+
+  /* Firebase sends the reset mail; we never see or set the password.
+     Deliberately does not say whether the address exists — that would turn
+     this box into a way to test which emails have accounts. */
+  async sendPasswordReset(email) {
+    if (this.mode !== 'firebase' || !this._auth) {
+      throw new Error('Password reset needs the live account system. Email support and we will sort it out.');
+    }
+    try {
+      await this._auth.sendPasswordResetEmail(String(email || '').trim());
+    } catch (err) {
+      const code = (err && err.code) || '';
+      /* user-not-found is swallowed on purpose — see above. */
+      if (code === 'auth/user-not-found' || code === 'auth/invalid-email') return;
+      if (code === 'auth/too-many-requests') throw new Error('Too many attempts. Wait a few minutes and try again.');
+      throw new Error('Could not send the reset email. Check the address and try again.');
+    }
   },
 
   currentUser() {

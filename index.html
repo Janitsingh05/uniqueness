@@ -108,6 +108,36 @@
       "@type": "Question",
       "name": "Is my clip uploaded to a server?",
       "acceptedAnswer": { "@type": "Answer", "text": "Yes — your clip is uploaded so it can be transcribed accurately and, if you export an MP4, so the captions can be burned in. It is used for nothing else, is never shared, and is deleted from our servers within 24 hours. See our privacy policy for the detail." }
+    },
+    {
+      "@type": "Question",
+      "name": "Which video formats can I upload?",
+      "acceptedAnswer": { "@type": "Answer", "text": "MP4, MOV, WEBM, MKV, AVI and 3GP for video, and M4A, MP3, WAV, AAC, OGG, OPUS or FLAC if you only have audio. If it plays in your browser, it will almost certainly work." }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the maximum file size?",
+      "acceptedAnswer": { "@type": "Answer", "text": "500MB per clip. That is generous for short-form — a 60-second 1080p Reel is usually well under 100MB. If your file is larger, export it again at 1080p rather than 4K; captions do not need the extra resolution." }
+    },
+    {
+      "@type": "Question",
+      "name": "How long can my clip be?",
+      "acceptedAnswer": { "@type": "Answer", "text": "There is no hard limit, and long clips are split automatically so nothing is lost. In practice short-form is what this is built for — past about 10 minutes, transcription and burning the captions in both start to take a while." }
+    },
+    {
+      "@type": "Question",
+      "name": "Which languages does it support?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Speech-to-text covers 27 languages including Hindi, Hinglish, Marathi, Punjabi, Bengali, Tamil, Telugu, Gujarati, Kannada, Malayalam, Urdu, Odia and Nepali, alongside English, Spanish, French, German, Portuguese, Arabic, Chinese, Japanese, Korean, Russian, Indonesian, Turkish, Italian and Vietnamese. Auto-detect handles the rest. You can also translate finished captions into 16 languages and download those as subtitle files." }
+    },
+    {
+      "@type": "Question",
+      "name": "How long does an export take?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Captions appear a few seconds after the clip lands — a 30-second clip transcribes in about 6 seconds. SRT, VTT and TXT files download instantly. A burned-in MP4 takes longer because the video is re-encoded, usually a minute or two for a short clip." }
+    },
+    {
+      "@type": "Question",
+      "name": "Does it work on a phone?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes — the studio runs in any modern mobile browser, and you can caption and export straight from your phone. Fine-tuning caption size and position is easier on a bigger screen, so a lot of people shoot on a phone and style on a laptop." }
     }
   ]
 }
@@ -117,7 +147,7 @@
 
 <header class="site-nav" id="siteNav">
   <div class="site-nav__inner">
-    <a class="site-nav__brand" href="index.html"><img src="assets/images/uniqueness-logo.png" alt="uniqueness — home" /></a>
+    <a class="site-nav__brand" href="index.html"><img src="assets/images/uniqueness-logo.png" alt="uniqueness — home" width="1312" height="300" /></a>
     <div class="grow"></div>
     <nav class="site-nav__links">
       <a class="site-nav__link" href="#how">How it works</a>
@@ -139,7 +169,7 @@
   <div class="nav-drawer__scrim"></div>
   <div class="nav-drawer__panel">
     <div class="nav-drawer__head">
-      <img src="assets/images/uniqueness-logo.png" alt="uniqueness" />
+      <img src="assets/images/uniqueness-logo.png" alt="uniqueness" width="1312" height="300" loading="lazy" decoding="async" />
       <button class="nav-drawer__close" id="navDrawerClose" type="button" aria-label="Close menu">✕</button>
     </div>
     <a class="site-nav__link" href="#how">How it works</a>
@@ -157,21 +187,25 @@
   <div class="hero__glow" aria-hidden="true"><i></i><i></i></div>
   <div class="hero__inner">
     <div>
-      <div class="hero__tag"><span class="hero__dot"></span> CAPTION STUDIO · EST 2026</div>
+      <div class="hero__tag"><span class="hero__dot" aria-hidden="true"></span> CAPTION STUDIO · EST 2026</div>
       <h1>Captions that<br /><span class="grad-text">earn the scroll</span></h1>
-      <p>Upload a clip. uniqueness times every word to your voice and animates it so people keep watching — short-form that looks directed, not subtitled.</p>
+      <p>Add a clip. uniqueness times every word to your voice and animates it so people keep watching — short-form that looks directed, not subtitled.</p>
+      <p style="margin-top:-6px"><b>Hindi, English, and the Hinglish you actually speak.</b> Most caption tools transcribe mixed Hindi-English into nonsense, or spell it back at you in Devanagari. This one writes it the way you would type it.</p>
       <div class="row-wrap" style="margin-bottom:20px">
         <a class="btn btn--primary btn--lg" href="login.html?mode=signup">Caption my first clip — free</a>
         <a class="btn btn--ghost btn--lg" href="#styles">See it move →</a>
       </div>
       <div class="hero__facts">
+        <span>Fluent in Hinglish</span>
         <span>No credit card needed</span>
         <span>Ready in seconds</span>
-        <span>Fluent in Hinglish</span>
       </div>
       <div class="hero__platforms">
         <span>Built for</span>
-        <b>TikTok</b><b>Reels</b><b>Shorts</b><b>Snapchat</b>
+        <!-- Reels first, TikTok last: this site is priced in rupees and
+             targets Indian creators, where TikTok has been banned since
+             2020. Leading with it read as a copied template. -->
+        <b>Reels</b><b>Shorts</b><b>Snapchat</b><b>TikTok</b>
       </div>
     </div>
 
@@ -200,10 +234,10 @@
   </div>
 </section>
 
-<div class="marquee">
+<div class="marquee" role="presentation">
   <div class="marquee__track">
     <span>Stop the thumb mid-scroll</span><span>Every word timed to your voice</span><span>Looks directed, not subtitled</span><span>11 kinetic caption styles</span><span>Ready to post in seconds</span><span>Fluent in Hinglish too</span><span>Free to start, no card needed</span>
-    <span>Stop the thumb mid-scroll</span><span>Every word timed to your voice</span><span>Looks directed, not subtitled</span><span>11 kinetic caption styles</span><span>Ready to post in seconds</span><span>Fluent in Hinglish too</span><span>Free to start, no card needed</span>
+    <span aria-hidden="true" style="display:contents"><span>Stop the thumb mid-scroll</span><span>Every word timed to your voice</span><span>Looks directed, not subtitled</span><span>11 kinetic caption styles</span><span>Ready to post in seconds</span><span>Fluent in Hinglish too</span><span>Free to start, no card needed</span></span>
   </div>
 </div>
 
@@ -245,36 +279,46 @@
     <p class="land-lead" style="margin-bottom:36px">Five stages, fully automatic — but every one is yours to override.</p>
     <div class="grid grid--cards land-steps">
       <article class="land-step">
-        <span class="land-step__icon">⌕</span>
+        <span class="land-step__icon" aria-hidden="true">⌕</span>
         <span class="land-step__num">01</span>
         <h3>Transcribe</h3>
         <p>Accurate speech-to-text with real word-level timestamps. Your clip is private to your account and deleted from our servers within 24 hours.</p>
       </article>
       <article class="land-step">
-        <span class="land-step__icon">◔</span>
+        <span class="land-step__icon" aria-hidden="true">◔</span>
         <span class="land-step__num">02</span>
         <h3>Time</h3>
         <p>Every word is locked to the exact moment it's spoken, then grouped into lines by natural rhythm.</p>
       </article>
       <article class="land-step">
-        <span class="land-step__icon">✦</span>
+        <span class="land-step__icon" aria-hidden="true">✦</span>
         <span class="land-step__num">03</span>
         <h3>Direct</h3>
         <p>11 kinetic styles — one-word punch-ins, karaoke highlights, neon glow — applied in a tap.</p>
       </article>
       <article class="land-step">
-        <span class="land-step__icon">▦</span>
+        <span class="land-step__icon" aria-hidden="true">▦</span>
         <span class="land-step__num">04</span>
         <h3>Cut</h3>
         <p>Edit the script live — captions adjust to your words and re-match the voice automatically.</p>
       </article>
       <article class="land-step">
-        <span class="land-step__icon">⇩</span>
+        <span class="land-step__icon" aria-hidden="true">⇩</span>
         <span class="land-step__num">05</span>
         <h3>Export</h3>
         <p>Burn captions into 9:16, 1:1, or 16:9 — or pull a clean SRT, VTT, or TXT. Fast, and ready to post.</p>
       </article>
     </div>
+    <!-- Translation shipped in the editor but was never mentioned anywhere
+         a visitor would see it. It is verified working end to end: the
+         timing is reused untouched and the result downloads as SRT, VTT or
+         TXT. -->
+    <p style="margin-top:26px;font-size:14px;color:var(--mut);line-height:1.7;max-width:640px">
+      <b style="color:var(--ink)">One more thing — reach a second audience.</b>
+      Captions you have already timed can be translated into 16 languages and downloaded as
+      subtitle files, keeping the original voice timing exactly as it was. Post the clip once,
+      caption it twice.
+    </p>
   </div>
 </section>
 
@@ -295,11 +339,27 @@
 <section class="land-section land-section--tint reveal">
   <div class="land-section__inner">
     <div class="grid grid--stats land-stats">
-      <div class="land-stat"><b data-count="0">0</b><span>fuss — drop a clip and captions write themselves</span></div>
+      <!-- "0 fuss" and "0 setup headaches" counted up to nothing and read as
+           filler. These four are all checkable: 27 = UQ.config.speechLangs
+           minus Auto-detect, 11 = templates, 3 = aspect ratios, 4 = the
+           export formats the studio actually produces. -->
+      <div class="land-stat"><b data-count="27">27</b><span>languages heard, Hinglish included</span></div>
       <div class="land-stat"><b data-count="11">11</b><span>kinetic styles, every one running live</span></div>
       <div class="land-stat"><b data-count="3">3</b><span>aspect ratios, made for every feed</span></div>
-      <div class="land-stat"><b data-count="0">0</b><span>setup headaches — free to start</span></div>
+      <div class="land-stat"><b data-count="4">4</b><span>ways out — MP4, SRT, VTT and TXT</span></div>
     </div>
+  </div>
+</section>
+
+<!-- Social proof. Deliberately empty: js/landing.js removes this whole
+     section unless UQ.config.testimonials has real entries in it, so the
+     page shows no social-proof block at all rather than invented quotes.
+     Add real ones to config and the section appears by itself. -->
+<section class="land-section land-section--tint reveal hidden" id="voices">
+  <div class="land-section__inner land-section__inner--narrow">
+    <p class="eyebrow">In their words</p>
+    <h2 style="margin-bottom:28px">Creators using uniqueness</h2>
+    <div class="grid grid--cards" id="voicesGrid"></div>
   </div>
 </section>
 
@@ -439,6 +499,7 @@
       </article>
     </div>
     <p style="font-size:12.5px;color:var(--faint);margin-top:22px;text-align:center">All prices in Indian rupees · Switch or pause your plan in two clicks · Secure payments powered by Razorpay</p>
+    <p style="margin-top:10px;text-align:center"><a href="pricing.html" style="font-size:13.5px;font-weight:700;color:var(--purple-deep)">See full pricing &rarr;</a></p>
   </div>
 </section>
 
@@ -469,6 +530,30 @@
       <summary class="faq-item__q"><span>Is my clip uploaded to a server?</span><span class="faq-item__icon" aria-hidden="true"></span></summary>
       <div class="faq-item__a"><div class="faq-item__a-inner">Yes — your clip is uploaded so it can be transcribed accurately and, if you export an MP4, so the captions can be burned in. It is used for nothing else, is never shared, and is deleted from our servers within 24 hours. See our privacy policy for the detail.</div></div>
     </details>
+    <details class="faq-item">
+      <summary class="faq-item__q"><span>Which video formats can I upload?</span><span class="faq-item__icon" aria-hidden="true"></span></summary>
+      <div class="faq-item__a"><div class="faq-item__a-inner">MP4, MOV, WEBM, MKV, AVI and 3GP for video, and M4A, MP3, WAV, AAC, OGG, OPUS or FLAC if you only have audio. If it plays in your browser, it will almost certainly work.</div></div>
+    </details>
+    <details class="faq-item">
+      <summary class="faq-item__q"><span>What is the maximum file size?</span><span class="faq-item__icon" aria-hidden="true"></span></summary>
+      <div class="faq-item__a"><div class="faq-item__a-inner">500MB per clip. That is generous for short-form — a 60-second 1080p Reel is usually well under 100MB. If your file is larger, export it again at 1080p rather than 4K; captions do not need the extra resolution.</div></div>
+    </details>
+    <details class="faq-item">
+      <summary class="faq-item__q"><span>How long can my clip be?</span><span class="faq-item__icon" aria-hidden="true"></span></summary>
+      <div class="faq-item__a"><div class="faq-item__a-inner">There is no hard limit, and long clips are split automatically so nothing is lost. In practice short-form is what this is built for — past about 10 minutes, transcription and burning the captions in both start to take a while.</div></div>
+    </details>
+    <details class="faq-item">
+      <summary class="faq-item__q"><span>Which languages does it support?</span><span class="faq-item__icon" aria-hidden="true"></span></summary>
+      <div class="faq-item__a"><div class="faq-item__a-inner">Speech-to-text covers 27 languages including Hindi, Hinglish, Marathi, Punjabi, Bengali, Tamil, Telugu, Gujarati, Kannada, Malayalam, Urdu, Odia and Nepali, alongside English, Spanish, French, German, Portuguese, Arabic, Chinese, Japanese, Korean, Russian, Indonesian, Turkish, Italian and Vietnamese. Auto-detect handles the rest. You can also translate finished captions into 16 languages and download those as subtitle files.</div></div>
+    </details>
+    <details class="faq-item">
+      <summary class="faq-item__q"><span>How long does an export take?</span><span class="faq-item__icon" aria-hidden="true"></span></summary>
+      <div class="faq-item__a"><div class="faq-item__a-inner">Captions appear a few seconds after the clip lands — a 30-second clip transcribes in about 6 seconds. SRT, VTT and TXT files download instantly. A burned-in MP4 takes longer because the video is re-encoded, usually a minute or two for a short clip.</div></div>
+    </details>
+    <details class="faq-item">
+      <summary class="faq-item__q"><span>Does it work on a phone?</span><span class="faq-item__icon" aria-hidden="true"></span></summary>
+      <div class="faq-item__a"><div class="faq-item__a-inner">Yes — the studio runs in any modern mobile browser, and you can caption and export straight from your phone. Fine-tuning caption size and position is easier on a bigger screen, so a lot of people shoot on a phone and style on a laptop.</div></div>
+    </details>
   </div>
 </section>
 
@@ -483,7 +568,7 @@
     </div>
     <footer class="site-foot land-foot">
       <div>
-        <img src="assets/images/uniqueness-logo.png" alt="uniqueness" style="height:22px;margin-bottom:12px" />
+        <img src="assets/images/uniqueness-logo.png" alt="uniqueness" style="height:22px;margin-bottom:12px" width="1312" height="300" loading="lazy" decoding="async" />
         <p style="font-size:12.5px;color:var(--mut);max-width:280px;line-height:1.55">A caption studio for high-performance short-form. Built for creators who care how it looks.</p>
         <p style="font-size:12.5px;color:var(--mut);margin-top:10px"><a href="mailto:janitsingh05@gmail.com">janitsingh05@gmail.com</a></p>
       </div>
@@ -498,7 +583,7 @@
           <b>Account</b>
           <a href="login.html">Sign in</a>
           <a href="refer.html">Refer &amp; earn</a>
-          <a href="plugins.html">Plugins</a>
+          <a href="plugins.html">Export &amp; workflow</a>
         </div>
         <div>
           <b>Legal</b>
@@ -509,6 +594,7 @@
         </div>
         <div>
           <b>Learn</b>
+          <a href="about.html">About</a>
           <a href="blog/index.html">Blog</a>
           <a href="index.html#faq">FAQ</a>
         </div>

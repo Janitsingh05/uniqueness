@@ -206,7 +206,8 @@ export function buildAss({ lines, style, width, height, template, duration, wate
      the whole clip; layer 1 keeps it above captions if they ever overlap. */
   if (watermark) {
     const end = Number(duration) > 0 ? duration : (events.length ? Math.max(...lines.flatMap(l => wordTimes(l).map(t => t.end))) : 1);
-    events.push(`Dialogue: 1,${assTime(0)},${assTime(end)},Mark,,0,0,0,,UNIQUENESS.ONLINE`);
+    /* Lowercase, matching the editor's own corner mark and the brand. */
+    events.push(`Dialogue: 1,${assTime(0)},${assTime(end)},Mark,,0,0,0,,uniqueness.online`);
   }
 
   return { content: header + '\n' + events.join('\n') + '\n', events: events.length };

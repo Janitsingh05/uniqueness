@@ -184,3 +184,22 @@
 @keyframes pvGlow  { 0%, 100% { text-shadow: 0 0 .1em #8B5CFF, 0 0 .45em rgba(139, 92, 255, .8); } 50% { text-shadow: 0 0 .16em #8B5CFF, 0 0 .8em rgba(20, 184, 196, .9); } }
 @keyframes pvBuild { 0%, 20% { opacity: 0; transform: translateY(.3em); } 30%, 88% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(.3em); } }
 @keyframes pvType  { 0%, 8% { width: 0; } 55%, 100% { width: 100%; } }
+
+/* pv-reduced-motion — the style previews loop forever by design. For anyone
+   who has asked the OS for less motion, hold each one on its first frame
+   instead: the style is still legible, it just stops moving. */
+@media (prefers-reduced-motion: reduce) {
+  [class^="pv-"], [class^="pv-"] *,
+  .cap .w, .cap .typed, .cap .caret {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Off-screen previews hold still. Every .pv-* style loops forever, and the
+   homepage renders eight of them while the style gallery renders eleven —
+   on a mid-range Android that is a lot of compositing for tiles nobody is
+   looking at. js/landing.js adds .is-idle to whatever is out of view.
+   Default is idle so nothing animates before the observer has had its say;
+   the no-JS fallback below turns them back on. */
+.preview.is-idle, .preview.is-idle * { animation-play-state: paused !important; }

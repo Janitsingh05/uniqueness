@@ -59,7 +59,10 @@ UQ.config = {
     speed: 1,             // .5 - 2
     wpl: 3,               // words per line
     emoji: '',
-    upper: true,
+    /* Off by default: ALL-CAPS is measurably harder to read, especially for
+       dyslexic readers, and a caption tool defaulting to it teaches the
+       habit. Still one toggle away in the style panel. */
+    upper: false,
     ratio: '9:16'
   },
 
@@ -131,8 +134,31 @@ UQ.config = {
     { q: 'How do captions lock to my voice?', a: 'We transcribe the clip and lock every word to the moment it is spoken, then group lines by natural rhythm. Edit the script anytime — the timing adjusts with it.' },
     { q: 'Which aspect ratios can I export?', a: '9:16 for Reels and Shorts, 1:1 for feed posts, and 16:9 for YouTube — plus clean SRT, VTT, and TXT, or a real burned-in MP4.' },
     { q: 'How does billing work?', a: 'Every caption style is free. Pay only for captioning minutes and clean exports — a one-time credit pack or a monthly plan, both through secure Razorpay checkout (UPI, cards, netbanking).' },
-    { q: 'Is my clip uploaded to a server?', a: 'Yes — your clip is uploaded so it can be transcribed accurately and, if you export an MP4, so the captions can be burned in. It is used for nothing else, is never shared, and is deleted from our servers within 24 hours. See our privacy policy for the detail.' }
+    { q: 'Is my clip uploaded to a server?', a: 'Yes — your clip is uploaded so it can be transcribed accurately and, if you export an MP4, so the captions can be burned in. It is used for nothing else, is never shared, and is deleted from our servers within 24 hours. See our privacy policy for the detail.' },
+
+    /* The six below answer what people ask before signing up. Every number
+       here is checked against the code, not estimated: formats come from
+       UQ.handoff.isMedia, the size cap from limits.maxUploadMb (which
+       mirrors the server), the language list from speechLangs, and the
+       transcription timing from a measured 30s 1080x1920 clip. */
+    { q: 'Which video formats can I upload?', a: 'MP4, MOV, WEBM, MKV, AVI and 3GP for video, and M4A, MP3, WAV, AAC, OGG, OPUS or FLAC if you only have audio. If it plays in your browser, it will almost certainly work.' },
+    { q: 'What is the maximum file size?', a: '500MB per clip. That is generous for short-form — a 60-second 1080p Reel is usually well under 100MB. If your file is larger, export it again at 1080p rather than 4K; captions do not need the extra resolution.' },
+    { q: 'How long can my clip be?', a: 'There is no hard limit, and long clips are split automatically so nothing is lost. In practice short-form is what this is built for — past about 10 minutes, transcription and burning the captions in both start to take a while.' },
+    { q: 'Which languages does it support?', a: 'Speech-to-text covers 27 languages including Hindi, Hinglish, Marathi, Punjabi, Bengali, Tamil, Telugu, Gujarati, Kannada, Malayalam, Urdu, Odia and Nepali, alongside English, Spanish, French, German, Portuguese, Arabic, Chinese, Japanese, Korean, Russian, Indonesian, Turkish, Italian and Vietnamese. Auto-detect handles the rest. You can also translate finished captions into 16 languages and download those as subtitle files.' },
+    { q: 'How long does an export take?', a: 'Captions appear a few seconds after the clip lands — a 30-second clip transcribes in about 6 seconds. SRT, VTT and TXT files download instantly. A burned-in MP4 takes longer because the video is re-encoded, usually a minute or two for a short clip.' },
+    { q: 'Does it work on a phone?', a: 'Yes — the studio runs in any modern mobile browser, and you can caption and export straight from your phone. Fine-tuning caption size and position is easier on a bigger screen, so a lot of people shoot on a phone and style on a laptop.' }
   ],
+
+  /* Real testimonials only. The section renders nothing while this is
+     empty, so the page simply does not have a social-proof block until
+     there is genuine social proof to put in it — which is the honest
+     state for a product this new, and far better than inventing quotes.
+
+     To turn it on, add entries and they appear automatically:
+       { quote: '...', name: 'Full Name', handle: '@handle',
+         role: 'what they make', avatar: 'assets/images/x.jpg' }
+     Only add someone who actually said it and agreed to be named. */
+  testimonials: [],
 
   /* Referral economics. sharePercent must match server/src/config.js's
      same field — the server is what actually pays it out, this copy is
@@ -162,6 +188,22 @@ UQ.config = {
      and anything less than a clean studio recording. 'whisper-base'
      (~145MB) is a meaningfully more accurate free upgrade — bigger
      one-time download, still runs entirely on-device, still $0. */
+  /* What a clip has to be for the pipeline to accept it. maxUploadMb must
+     match server/src/config.js's maxUploadMb — the server rejects anything
+     over it, and finding that out after a 500MB upload is a bad way to
+     learn. The real value is reported by /api/health; this is the figure
+     used before the server has been asked, and the one the upload copy
+     quotes.
+
+     longClipMinutes is advisory only, not a limit: nothing server-side
+     caps duration, but a long clip on the free render tier is slow enough
+     that saying so beats leaving someone watching a bar. */
+  limits: {
+    maxUploadMb: 500,
+    longClipMinutes: 10,
+    formats: 'MP4, MOV, WEBM, M4A or WAV'
+  },
+
   autoCaption: {
     onUpload: true,
     model: 'Xenova/whisper-base'
@@ -232,7 +274,7 @@ UQ.config = {
     { group: 'Account', items: [
       { id: 'credits',  label: 'Credits & plans', icon: '◔', href: 'credits.html' },
       { id: 'refer',    label: 'Refer & earn',    icon: '◎', href: 'refer.html' },
-      { id: 'plugins',  label: 'Plugins',         icon: '⌸', href: 'plugins.html' },
+      { id: 'plugins',  label: 'Export & workflow', icon: '⌸', href: 'plugins.html' },
       { id: 'settings', label: 'Settings',        icon: '⚙', href: 'settings.html' }
     ]}
   ]

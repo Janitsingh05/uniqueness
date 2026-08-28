@@ -4,6 +4,23 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Caption editor · uniqueness</title>
+<meta name="description" content="The uniqueness caption studio — word-level timing, 11 kinetic styles and burned-in or subtitle-file export." />
+<meta name="robots" content="noindex, follow" />
+<link rel="canonical" href="https://www.uniqueness.online/editor" />
+<meta name="theme-color" content="#7C4DFF" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://www.uniqueness.online/editor" />
+<meta property="og:site_name" content="uniqueness" />
+<meta property="og:title" content="Caption editor · uniqueness" />
+<meta property="og:description" content="The uniqueness caption studio — word-level timing, 11 kinetic styles and burned-in or subtitle-file export." />
+<meta property="og:image" content="https://www.uniqueness.online/assets/images/og-cover.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:locale" content="en_IN" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Caption editor · uniqueness" />
+<meta name="twitter:description" content="The uniqueness caption studio — word-level timing, 11 kinetic styles and burned-in or subtitle-file export." />
+<meta name="twitter:image" content="https://www.uniqueness.online/assets/images/og-cover.png" />
 <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -63,10 +80,12 @@ document.documentElement.setAttribute('data-auth-pending','');
             <div class="stage__safe" id="safeBox"></div>
             <div class="cap tpl-punch" id="cap"></div>
             <div class="cap-resize" id="capResize" title="Drag to resize captions">⤢</div>
-            <div class="stage__mark" id="watermark">UNIQUENESS.ONLINE</div>
+            <!-- Lowercase: the brand is "uniqueness", not a shout. Matches the
+                 burned-in mark in server/src/lib/ass.js. -->
+            <div class="stage__mark" id="watermark">uniqueness.online</div>
           </div>
         </div>
-        <input type="file" id="fileInput" accept="video/*,audio/*" class="hidden" />
+        <input type="file" id="fileInput" accept="video/*,audio/*" class="hidden" aria-label="Choose a video or audio clip" />
 
         <div class="card card--pad" style="padding:16px">
           <div class="transport">
@@ -116,16 +135,16 @@ document.documentElement.setAttribute('data-auth-pending','');
         <div class="panel" data-panel="style">
           <div class="panel__group">
             <span class="eyebrow">Template</span>
-            <select class="select" id="tplSelect"></select>
+            <select class="select" id="tplSelect" aria-label="Caption style"></select>
           </div>
 
           <div class="panel__group">
             <span class="eyebrow">Font</span>
             <div class="row-wrap font-grid" id="fontPicker" style="gap:6px;margin-bottom:16px"></div>
             <div class="range-label"><span>Size</span><b id="sizeValue"></b></div>
-            <input class="range" type="range" id="sizeRange" min="3" max="16" step="0.5" />
+            <input class="range" type="range" id="sizeRange" min="3" max="16" step="0.5" aria-label="Caption size" />
             <div class="range-label" style="margin-top:16px"><span>Position from bottom</span><b id="posValue"></b></div>
-            <input class="range" type="range" id="posRange" min="4" max="80" step="1" />
+            <input class="range" type="range" id="posRange" min="4" max="80" step="1" aria-label="Caption position from the bottom" />
           </div>
 
           <div class="panel__group">
@@ -154,16 +173,16 @@ document.documentElement.setAttribute('data-auth-pending','');
           <div class="panel__group">
             <span class="eyebrow">Outline &amp; shadow</span>
             <div class="range-label"><span>Stroke</span><b id="strokeValue"></b></div>
-            <input class="range" type="range" id="strokeRange" min="0" max="10" step="1" />
+            <input class="range" type="range" id="strokeRange" min="0" max="10" step="1" aria-label="Caption outline thickness" />
             <button class="toggle-row" id="shadowToggle" style="margin-top:15px"><span>Drop shadow</span><span id="shadowState">on</span></button>
           </div>
 
           <div class="panel__group">
             <span class="eyebrow">Motion &amp; layout</span>
             <div class="range-label"><span>Animation speed</span><b id="speedValue"></b></div>
-            <input class="range" type="range" id="speedRange" min="0.5" max="2" step="0.1" />
+            <input class="range" type="range" id="speedRange" min="0.5" max="2" step="0.1" aria-label="Caption animation speed" />
             <div class="range-label" style="margin-top:16px"><span>Words per line</span><b id="wplValue"></b></div>
-            <input class="range" type="range" id="wplRange" min="1" max="7" step="1" />
+            <input class="range" type="range" id="wplRange" min="1" max="7" step="1" aria-label="Words per caption line" />
             <button class="toggle-row" id="upperToggle" style="margin-top:15px"><span>Uppercase</span><span id="upperState">on</span></button>
           </div>
 
@@ -191,7 +210,7 @@ document.documentElement.setAttribute('data-auth-pending','');
             </div>
 
             <div class="range-label"><span>Voice sensitivity</span><b id="sensValue">Balanced</b></div>
-            <input class="range" type="range" id="sensRange" min="1" max="10" step="1" style="margin-bottom:13px" />
+            <input class="range" type="range" id="sensRange" min="1" max="10" step="1" style="margin-bottom:13px" aria-label="Voice detection sensitivity" />
 
             <div class="row-wrap" style="gap:8px;margin-bottom:9px">
               <button class="btn btn--primary" id="listenBtn" style="flex:1;min-width:148px">Auto-caption from clip</button>
@@ -209,7 +228,7 @@ document.documentElement.setAttribute('data-auth-pending','');
           <div class="panel__group">
             <span class="eyebrow">Edit script</span>
             <p style="font-size:12px;color:var(--mut);line-height:1.5;margin-bottom:10px">Change any word — captions adjust live to your script and stay on the voice. Use Apply for a full re-match.</p>
-            <textarea class="textarea" id="transcript" rows="9" placeholder="Your script appears here after Auto-caption…"></textarea>
+            <textarea class="textarea" id="transcript" rows="9" placeholder="Your script appears here after Auto-caption…" aria-label="Caption script"></textarea>
             <div class="row-wrap" style="gap:8px;margin-top:10px">
               <button class="btn btn--primary" id="applyScriptBtn" style="flex:1">Re-match to voice</button>
               <button class="btn btn--quiet" id="hinglishBtn" title="Convert Hindi script (Devanagari) to Hinglish (Roman)">Hinglish</button>
@@ -259,7 +278,7 @@ document.documentElement.setAttribute('data-auth-pending','');
 
           <div class="panel__group">
             <span class="eyebrow">Translate captions</span>
-            <select class="select" id="translateLang" style="margin-bottom:10px"></select>
+            <select class="select" id="translateLang" style="margin-bottom:10px" aria-label="Translate captions to"></select>
             <button class="btn btn--ghost btn--block" id="translateBtn">Translate this clip's captions</button>
             <div style="font-size:11.5px;color:var(--faint);margin-top:9px;font-weight:600" id="translateNote">Same voice timing, translated text — same clip, another language.</div>
             <div class="stack hidden" id="translateDownloads" style="gap:8px;margin-top:12px"></div>

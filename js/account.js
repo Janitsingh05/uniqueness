@@ -85,26 +85,13 @@ UQ.refer = {
   }
 };
 
-/* ---------------- Plugins ---------------- */
+/* ---------------- Export & workflow ---------------- */
+/* Was the "editor plugins" page: a waitlist for panels that do not exist.
+   The page now leads with the exports that do work, so there is no list to
+   build and nothing to store — mounting the shell is the whole job. */
 UQ.plugins = {
   init() {
-    if (!UQ.shell.mount('plugins', 'Plugins')) return;
-    const saved = JSON.parse(localStorage.getItem('uq_plugin_waitlist') || '{}');
-    UQ.ui.el('#integrations').innerHTML = UQ.config.integrations.map(i =>
-      '<div class="integration"><div class="integration__logo">' + i.short + '</div>' +
-      '<div class="grow"><div style="font-size:13.5px;font-weight:700">' + i.name + '</div>' +
-      '<div style="font-size:11.5px;color:var(--faint)" data-status="' + i.key + '">' + (saved[i.key] ? 'On the list' : 'Roadmap') + '</div></div>' +
-      '<button class="btn btn--sm ' + (saved[i.key] ? 'btn--done' : 'btn--quiet') + '" data-notify="' + i.key + '">' +
-      (saved[i.key] ? 'Added ✓' : 'Notify me') + '</button></div>').join('');
-
-    UQ.ui.els('[data-notify]').forEach(b => b.addEventListener('click', () => {
-      const key = b.dataset.notify;
-      saved[key] = !saved[key];
-      localStorage.setItem('uq_plugin_waitlist', JSON.stringify(saved));
-      b.textContent = saved[key] ? 'Added ✓' : 'Notify me';
-      b.className = 'btn btn--sm ' + (saved[key] ? 'btn--done' : 'btn--quiet');
-      UQ.ui.el('[data-status="' + key + '"]').textContent = saved[key] ? 'On the list' : 'Roadmap';
-    }));
+    UQ.shell.mount('plugins', 'Export & workflow');
   }
 };
 
@@ -161,6 +148,6 @@ UQ.settings = {
    this file just can't hardcode which one, so it picks by DOM instead. */
 UQ.start(() => {
   if (document.getElementById('refLink')) return UQ.refer.init();
-  if (document.getElementById('integrations')) return UQ.plugins.init();
+  if (document.getElementById('workflowPage')) return UQ.plugins.init();
   if (document.getElementById('toggles')) return UQ.settings.init();
 });

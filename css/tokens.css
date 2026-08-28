@@ -27,7 +27,11 @@
   --ink:    #14141C;  /* headings + body */
   --body:   #4B4F5E;  /* secondary body copy */
   --mut:    #6E7180;  /* muted labels */
-  --faint:  #A3A8B8;  /* placeholder / disabled */
+  /* Was #A3A8B8 — only 2.37:1 on white, well under WCAG AA 4.5:1, and it
+     is used for footer text, field hints and small print. This is the
+     lightest shade of the same hue that clears AA (4.54:1), so the visual
+     hierarchy against --mut is unchanged. */
+  --faint:  #727681;  /* placeholder / disabled */
   --line:   #E4E6F0;  /* input + button borders */
   --hair:   #ECEDF5;  /* card borders */
   --rule:   #F1F2F8;  /* internal dividers */
